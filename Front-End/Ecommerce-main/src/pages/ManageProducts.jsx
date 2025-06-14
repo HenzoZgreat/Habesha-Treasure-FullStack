@@ -1,99 +1,107 @@
-// src/pages/ManageProducts.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-// import { useNavigate } from 'react-router-dom'; // Uncomment if using React Router for navigation
+import { useNavigate } from 'react-router-dom';
 
 import ProductListHeader from '../componets/products/ ProductListHeader';
 import ProductFilters from '../componets/products/ProductFilters';
 import ProductTable from '../componets/products/ProductTable';
 import ProductCardGrid from '../componets/products/ProductCardGrid';
 import NoProductsFound from '../componets/products/NoProductsFound';
-import PaginationControls from '../componets/products/ ProductListHeader';
+import PaginationControls from '../componets/common/PaginationControls';
 import productService from '../service/productService';
-import { FiLoader, FiAlertTriangle } from 'react-icons/fi'; // For loading/error states
+import AddProductModal from '../componets/products/AddProductModal';
+import EditProductModal from '../componets/products/EditProductModal';
+import ProductDetailsModal from '../componets/products/ProductDetailsModal';
+import { FiLoader, FiAlertTriangle } from 'react-icons/fi';
 
 const PRODUCTS_PER_PAGE = 6;
 
 const ManageProducts = () => {
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // const navigate = useNavigate(); // For navigation
+  const navigate = useNavigate();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState(null);
 
-  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterStock, setFilterStock] = useState('All');
-  
-  // Options for filters, fetched from service
   const [categories, setCategories] = useState([]);
   const [statuses, setStatuses] = useState([]);
-
-  // View mode and selection
   const [viewMode, setViewMode] = useState('list');
   const [selectedProducts, setSelectedProducts] = useState([]);
-
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  // Fetch products from the service
+  const applyFilters = useCallback((products) => {
+    let filtered = [...products];
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(p => p.name.toLowerCase().includes(term) || p.id.toString().toLowerCase().includes(term));
+    }
+    if (filterCategory !== 'All') {
+      filtered = filtered.filter(p => p.category === filterCategory);
+    }
+    if (filterStatus !== 'All') {
+      filtered = filtered.filter(p => p.status === filterStatus);
+    }
+    if (filterStock !== 'All') {
+      if (filterStock === 'InStock') filtered = filtered.filter(p => p.stock > 5);
+      else if (filterStock === 'LowStock') filtered = filtered.filter(p => p.stock > 0 && p.stock <= 5);
+      else if (filterStock === 'OutOfStock') filtered = filtered.filter(p => p.stock === 0);
+    }
+    setTotalProducts(filtered.length);
+    setTotalPages(Math.ceil(filtered.length / PRODUCTS_PER_PAGE));
+    const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    const paginatedProducts = filtered.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
+    setFilteredProducts(paginatedProducts);
+  }, [searchTerm, filterCategory, filterStatus, filterStock, currentPage]);
+
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setSelectedProducts([]); // Clear selection on new data fetch
+    setSelectedProducts([]);
     try {
-      const params = {
-        page: currentPage,
-        limit: PRODUCTS_PER_PAGE,
-        searchTerm: searchTerm || undefined, // API might expect undefined, not empty string
-        category: filterCategory === 'All' ? undefined : filterCategory,
-        status: filterStatus === 'All' ? undefined : filterStatus,
-        stock: filterStock === 'All' ? undefined : filterStock,
-        // You can add sortBy, sortOrder here too
-      };
-      const response = await productService.getProducts(params);
-      setProducts(response.data.products);
-      setTotalProducts(response.data.totalProducts);
-      setTotalPages(response.data.totalPages);
+      const response = await productService.getProducts();
+      const products = response.data.products || response.data;
+      setProducts(products);
+      applyFilters(products);
+      const [catRes, statRes] = await Promise.all([
+        productService.getUniqueCategories(),
+        productService.getUniqueStatuses()
+      ]);
+      setCategories(catRes.data);
+      setStatuses(statRes.data);
     } catch (err) {
       console.error("Failed to fetch products:", err);
-      setError("Failed to load products. Please try again.");
-      setProducts([]); // Clear products on error
+      if (err.response && [401, 403].includes(err.response.status)) {
+        localStorage.removeItem('token');
+        navigate('/SignIn');
+      } else {
+        setError("Failed to load products. Please try again.");
+      }
+      setProducts([]);
+      setFilteredProducts([]);
       setTotalProducts(0);
       setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, filterCategory, filterStatus, filterStock]); // Dependencies for useCallback
+  }, [applyFilters, navigate]);
 
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]); // Effect runs when fetchProducts (or its dependencies) changes
+  }, [fetchProducts]);
 
-  // Fetch filter options (categories, statuses) on component mount
   useEffect(() => {
-    const fetchFilterOptions = async () => {
-      try {
-        const [catRes, statRes] = await Promise.all([
-          productService.getUniqueCategories(),
-          productService.getUniqueStatuses(),
-        ]);
-        setCategories(catRes.data);
-        setStatuses(statRes.data);
-      } catch (err) {
-        console.error("Failed to fetch filter options:", err);
-        // Fallback to derive from initial mock data if service fails (optional)
-        setCategories([...new Set(productService.initialMockProducts.map(p => p.category))].sort());
-        setStatuses([...new Set(productService.initialMockProducts.map(p => p.status))].sort());
-      }
-    };
-    fetchFilterOptions();
-  }, []);
+    applyFilters(products);
+  }, [searchTerm, filterCategory, filterStatus, filterStock, currentPage, products]);
 
-
-  // Handlers for filter changes
   const handleSearchChange = (e) => { setSearchTerm(e.target.value); setCurrentPage(1); };
   const handleCategoryChange = (e) => { setFilterCategory(e.target.value); setCurrentPage(1); };
   const handleStatusChange = (e) => { setFilterStatus(e.target.value); setCurrentPage(1); };
@@ -105,17 +113,18 @@ const ManageProducts = () => {
     }
   };
 
-  // --- CRUD Operations ---
   const handleAddProduct = () => {
-    // navigate('/admin/products/new'); // Or open a modal
-    alert('Implement Add Product: Open form/modal, then call productService.addProduct() and refresh list.');
-    // Example: const newProd = await productService.addProduct(dataFromForm); if (newProd) fetchProducts();
+    setIsAddModalOpen(true);
   };
 
   const handleEditProduct = (productId) => {
-    // navigate(`/admin/products/edit/${productId}`); // Or open a modal
-    alert(`Implement Edit Product ID: ${productId}. Open form/modal, then call productService.updateProduct() and refresh list.`);
-    // Example: const updatedProd = await productService.updateProduct(productId, dataFromForm); if (updatedProd) fetchProducts();
+    setSelectedProductId(productId);
+    setIsEditModalOpen(true);
+  };
+
+  const handleViewDetails = (productId) => {
+    setSelectedProductId(productId);
+    setIsDetailsModalOpen(true);
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -123,18 +132,12 @@ const ManageProducts = () => {
       try {
         setLoading(true);
         await productService.deleteProduct(productId);
-        alert(`Product ${productId} deleted.`);
-        // Optimistically update UI or refetch
-        // If the deleted product was the last on a page, navigate to previous page
-        if (products.length === 1 && currentPage > 1) {
-            setCurrentPage(prev => prev - 1); // This will trigger fetchProducts via useEffect
-        } else {
-            fetchProducts(); // Refetch current page
-        }
+        fetchProducts();
       } catch (err) {
         console.error("Failed to delete product:", err);
-        alert(`Failed to delete product ${productId}. ${err.message || 'Server error'}`);
-        setLoading(false); // Ensure loading is false on error
+        alert(`Failed to delete product ${productId}. ${err.response?.data?.message || 'Server error'}`);
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -148,26 +151,23 @@ const ManageProducts = () => {
       try {
         setLoading(true);
         await productService.deleteMultipleProducts(selectedProducts);
-        alert(`${selectedProducts.length} products deleted.`);
-        setSelectedProducts([]); // Clear selection
-        // If all products on the current page were deleted
-        if (products.length === selectedProducts.length && currentPage > 1) {
-            setCurrentPage(prev => prev - 1);
-        } else {
-            fetchProducts();
-        }
+        fetchProducts();
       } catch (err) {
         console.error("Failed to delete selected products:", err);
-        alert(`Failed to delete selected products. ${err.message || 'Server error'}`);
+        alert(`Failed to delete selected products. ${err.response?.data?.message || 'Server error'}`);
+        if (err.response && [401, 403].includes(err.response.status)) {
+          localStorage.removeItem('token');
+          navigate('/SignIn');
+        }
+      } finally {
         setLoading(false);
       }
     }
   };
 
-  // --- Selection Logic ---
   const handleSelectAll = (event) => {
     if (event.target.checked) {
-      setSelectedProducts(products.map(p => p.id));
+      setSelectedProducts(filteredProducts.map(p => p.id));
     } else {
       setSelectedProducts([]);
     }
@@ -181,10 +181,8 @@ const ManageProducts = () => {
     }
   };
   
-  const isAllCurrentPageSelected = products.length > 0 && selectedProducts.length === products.length;
+  const isAllCurrentPageSelected = filteredProducts.length > 0 && selectedProducts.length === filteredProducts.length;
 
-
-  // Render logic
   const renderContent = () => {
     if (loading) {
       return (
@@ -209,7 +207,7 @@ const ManageProducts = () => {
         </div>
       );
     }
-    if (products.length === 0) {
+    if (filteredProducts.length === 0) {
       const isFiltered = searchTerm || filterCategory !== 'All' || filterStatus !== 'All' || filterStock !== 'All';
       return <NoProductsFound 
                 message={isFiltered ? "No products match your criteria" : "No products available"}
@@ -219,31 +217,34 @@ const ManageProducts = () => {
     if (viewMode === 'list') {
       return (
         <ProductTable
-          products={products}
+          products={filteredProducts}
           selectedProducts={selectedProducts}
           onSelectAll={handleSelectAll}
           onSelectProduct={handleSelectProduct}
           onEditProduct={handleEditProduct}
           onDeleteProduct={handleDeleteProduct}
+          onViewDetails={handleViewDetails}
           isAllCurrentPageSelected={isAllCurrentPageSelected}
         />
       );
     }
-    return ( // Card View
+    return (
       <ProductCardGrid
-        products={products}
+        products={filteredProducts}
         selectedProducts={selectedProducts}
         onSelectProduct={handleSelectProduct}
         onEditProduct={handleEditProduct}
         onDeleteProduct={handleDeleteProduct}
+        onViewDetails={handleViewDetails}
       />
     );
   };
 
+  const selectedProduct = products.find(p => p.id === selectedProductId);
+
   return (
     <div className="space-y-6">
       <ProductListHeader onAddProduct={handleAddProduct} />
-
       <ProductFilters
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
@@ -260,10 +261,8 @@ const ManageProducts = () => {
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
       />
-
       {renderContent()}
-      
-      {!loading && !error && products.length > 0 && totalPages > 0 && (
+      {!loading && !error && filteredProducts.length > 0 && totalPages > 0 && (
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
@@ -271,6 +270,24 @@ const ManageProducts = () => {
           totalItems={totalProducts}
         />
       )}
+      <AddProductModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAddProduct={fetchProducts}
+        products={products}
+      />
+      <EditProductModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onUpdateProduct={fetchProducts}
+        product={selectedProduct}
+        products={products}
+      />
+      <ProductDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        product={selectedProduct}
+      />
     </div>
   );
 };

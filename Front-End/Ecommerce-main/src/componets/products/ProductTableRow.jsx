@@ -1,9 +1,8 @@
-// src/components/products/ProductTableRow.jsx
 import React from 'react';
-import { FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiEye } from 'react-icons/fi';
 import { getStatusClass, getStatusDotClass } from '../../utils/helpers';
 
-const ProductTableRow = ({ product, isSelected, onSelectProduct, onEditProduct, onDeleteProduct }) => {
+const ProductTableRow = ({ product, isSelected, onSelectProduct, onEditProduct, onDeleteProduct, onViewDetails }) => {
   return (
     <tr className={`hover:bg-gray-50/50 transition-colors ${isSelected ? 'bg-habesha_blue/10' : ''}`}>
       <td className="p-4">
@@ -16,8 +15,19 @@ const ProductTableRow = ({ product, isSelected, onSelectProduct, onEditProduct, 
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
         <div className="flex items-center">
-          <img className="h-16 w-12 rounded-md object-cover mr-4 shadow-sm border border-gray-100" src={product.image || 'https://via.placeholder.com/80x100/EEEEEE/AAAAAA?text=No+Image'} alt={product.name} />
-          <span className="text-sm font-medium text-gray-800 truncate max-w-xs" title={product.name}>{product.name}</span>
+          <img 
+            className="h-16 w-12 rounded-md object-cover mr-4 shadow-sm border border-gray-100 cursor-pointer" 
+            src={product.image || 'https://via.placeholder.com/80x100/EEEEEE/AAAAAA?text=No+Image'} 
+            alt={product.name} 
+            onClick={() => onViewDetails(product.id)}
+          />
+          <span 
+            className="text-sm font-medium text-gray-800 truncate max-w-xs cursor-pointer hover:text-habesha_blue" 
+            title={product.name}
+            onClick={() => onViewDetails(product.id)}
+          >
+            {product.name}
+          </span>
         </div>
       </td>
       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{product.id}</td>
@@ -36,6 +46,9 @@ const ProductTableRow = ({ product, isSelected, onSelectProduct, onEditProduct, 
       </td>
       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{product.dateAdded}</td>
       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium space-x-1">
+        <button onClick={() => onViewDetails(product.id)} className="text-green-600 hover:text-green-800 p-1.5 rounded-full hover:bg-green-100 transition-colors" title="View Details">
+          <FiEye size={18} />
+        </button>
         <button onClick={() => onEditProduct(product.id)} className="text-blue-600 hover:text-blue-800 p-1.5 rounded-full hover:bg-blue-100 transition-colors" title="Edit">
           <FiEdit2 size={18} />
         </button>

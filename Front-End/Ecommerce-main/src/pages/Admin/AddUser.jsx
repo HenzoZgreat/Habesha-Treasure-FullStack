@@ -55,7 +55,8 @@ const AddUser = () => {
       setTimeout(() => navigate('/admin/users'), 2000);
     } catch (err) {
       console.error('Create error:', err);
-      setErrors({ general: `Error creating user: ${err.response?.data?.message || err.message}` });
+      const errorMessage = err.response?.data || 'Error creating user';
+      setErrors({ general: errorMessage });
       if (err.response && [401, 403].includes(err.response.status)) {
         localStorage.removeItem('token');
         navigate('/SignIn');
@@ -84,7 +85,7 @@ const AddUser = () => {
         </div>
       )}
       {Object.keys(errors).length > 0 && !errors.general && !errors.success && (
-        <div className="mb-6 p-4 bg-gray-100 border-l-4 bg-white border-red-500 text-red-600">
+        <div className="mb-6 p-4 bg-gray-100 border-l-4 border-red-500 text-red-600">
           <ul>
             {Object.entries(errors).map(([key, value], index) => (
               <li key={index}>• {value}</li>

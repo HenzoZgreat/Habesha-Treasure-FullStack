@@ -1,4 +1,3 @@
-// src/components/products/ProductTable.jsx
 import React from 'react';
 import ProductTableRow from './ProductTableRow';
 
@@ -9,7 +8,8 @@ const ProductTable = ({
   onSelectProduct, 
   onEditProduct, 
   onDeleteProduct,
-  isAllCurrentPageSelected, // To manage the header checkbox state
+  onViewDetails,
+  isAllCurrentPageSelected
 }) => {
   return (
     <div className="bg-white shadow-xl rounded-xl overflow-hidden">
@@ -45,6 +45,7 @@ const ProductTable = ({
                 onSelectProduct={onSelectProduct}
                 onEditProduct={onEditProduct}
                 onDeleteProduct={onDeleteProduct}
+                onViewDetails={onViewDetails}
               />
             ))}
           </tbody>

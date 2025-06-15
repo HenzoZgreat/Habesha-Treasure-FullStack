@@ -76,7 +76,21 @@ public class ProductsService {
         }
     }
 
-    
+    public void rateProduct(Integer productId, int newRating) {
+        Products product = getProductById(productId);
+
+        int count = product.getCount();
+        double currentAvg = product.getRate();
+
+        double newAvg = ((currentAvg * count) + newRating) / (count + 1);
+
+        product.setCount(count + 1);
+        product.setRate(newAvg);
+
+        productsRepo.save(product);
+    }
+
+
     public List<Products> getFeaturedProducts() {
         return productsRepo.findByIsFeaturedTrue();
     }

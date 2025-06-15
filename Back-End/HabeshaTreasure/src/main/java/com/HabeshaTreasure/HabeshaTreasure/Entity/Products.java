@@ -44,6 +44,12 @@ public class Products {
     @Column(nullable = false)
     private Integer favorites = 0;
 
+    @Column(nullable = false)
+    private Double rate = 0.0;
+
+    @Column(nullable = false)
+    private Integer count = 0;
+
     @Column(name = "is_featured", nullable = false)
     private Boolean isFeatured = false;
 

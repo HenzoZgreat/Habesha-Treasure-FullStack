@@ -14,7 +14,7 @@ import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/admin/products")
-public class ProductsController {
+public class ProductsAdminController {
 
     @Autowired
     private ProductsService productsService;
@@ -79,17 +79,6 @@ public class ProductsController {
         return ResponseEntity.ok(productsService.getFavoritesCount(id));
     }
 
-    @PatchMapping("/{id}/favorites/increment")
-    public ResponseEntity<?> incrementFavorites(@PathVariable Integer id) {
-        productsService.incrementFavorites(id);
-        return ResponseEntity.ok("Favorites incremented");
-    }
-
-    @PatchMapping("/{id}/favorites/decrement")
-    public ResponseEntity<?> decrementFavorites(@PathVariable Integer id) {
-        productsService.decrementFavorites(id);
-        return ResponseEntity.ok("Favorites decremented");
-    }
 
     @GetMapping("/featured")
     public ResponseEntity<List<Products>> getFeaturedProducts() {

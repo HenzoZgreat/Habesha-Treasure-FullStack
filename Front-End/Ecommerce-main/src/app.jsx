@@ -15,6 +15,7 @@ import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import SignIn from "./pages/SignIn";
 import Regestration from "./pages/Regestration";
+import ProductDetails from "./pages/User/ProductDetails"; // Assuming you have a ProductDetails page
 
 // Import the Admin Layout
 import AdminDashboardLayout from "./layout/AdminDashboardLayout"; // Assuming this is your layout file
@@ -50,6 +51,7 @@ function App() {
         {/* Public facing layout and routes */}
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} loader={productsData}></Route>
+          <Route path="/product/:id" element={<ProductDetails />} /> {/* Product details page */}
           <Route path="/cart" element={<Cart />}></Route>
           {/* Add other public routes here if they share the Header/Footer Layout */}
         </Route>

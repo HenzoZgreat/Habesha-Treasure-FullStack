@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class ProductRequestDTO {
+    private Integer id;
     private String name;
     private String image;
     private String category;
@@ -13,5 +14,8 @@ public class ProductRequestDTO {
     private String descriptionEn;
     private String descriptionAm;
     private Boolean isFeatured;
+    private Double rate;
+    private Integer count;
 }
+
 

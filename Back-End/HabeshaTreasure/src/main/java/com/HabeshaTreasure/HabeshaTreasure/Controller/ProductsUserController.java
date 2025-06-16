@@ -1,12 +1,18 @@
 package com.HabeshaTreasure.HabeshaTreasure.Controller;
 
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Products;
+import com.HabeshaTreasure.HabeshaTreasure.Entity.Review;
+import com.HabeshaTreasure.HabeshaTreasure.Entity.User;
+import com.HabeshaTreasure.HabeshaTreasure.Service.FavoriteProductService;
 import com.HabeshaTreasure.HabeshaTreasure.Service.ProductsService;
+import com.HabeshaTreasure.HabeshaTreasure.Service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -15,6 +21,11 @@ public class ProductsUserController {
 
     @Autowired
     private ProductsService productsService;
+    @Autowired
+    private FavoriteProductService favoriteService;
+    @Autowired
+    private ReviewService reviewService;
+
 
     @GetMapping
     public ResponseEntity<List<Products>> getAllProducts() {
@@ -49,6 +60,55 @@ public class ProductsUserController {
     public ResponseEntity<?> decrementFavorites(@PathVariable Integer id) {
         productsService.decrementFavorites(id);
         return ResponseEntity.ok("Favorites decremented");
+    }
+
+
+
+    // Favorites
+    @PostMapping("/{id}/favorite")
+    public ResponseEntity<?> favorite(@PathVariable Integer id, @AuthenticationPrincipal User user) {
+        favoriteService.addToFavorites(user, id);
+        return ResponseEntity.ok("Favorited");
+    }
+
+    @DeleteMapping("/{id}/favorite")
+    public ResponseEntity<?> unfavorite(@PathVariable Integer id, @AuthenticationPrincipal User user) {
+        favoriteService.removeFromFavorites(user, id);
+        return ResponseEntity.ok("Unfavorited");
+    }
+
+    @GetMapping("/favorites")
+    public ResponseEntity<List<Products>> getFavorites(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(favoriteService.getFavorites(user));
+    }
+
+    // Reviews
+    @PostMapping("/{id}/review")
+    public ResponseEntity<?> review(@PathVariable Integer id,
+                                    @RequestBody Map<String, Object> body,
+                                    @AuthenticationPrincipal User user) {
+        int rating = (int) body.get("rating");
+        String comment = (String) body.get("comment");
+        reviewService.addOrUpdateReview(user, id, rating, comment);
+        return ResponseEntity.ok("Review submitted");
+    }
+
+    @GetMapping("/{id}/reviews")
+    public ResponseEntity<List<Review>> getReviews(@PathVariable Integer id) {
+        return ResponseEntity.ok(reviewService.getReviewsForProduct(id));
+    }
+
+    @DeleteMapping("/{id}/review")
+    public ResponseEntity<?> deleteReview(@PathVariable Integer id, @AuthenticationPrincipal User user) {
+        reviewService.deleteReview(user, id);
+        return ResponseEntity.ok("Review deleted");
+    }
+
+
+    @GetMapping("/{id}/is-favorited")
+    public ResponseEntity<?> isFavorited(@PathVariable Integer id, @AuthenticationPrincipal User user) {
+        boolean isFav = favoriteService.isFavoritedBy(user, id);
+        return ResponseEntity.ok(Map.of("favorited", isFav));
     }
 
 }

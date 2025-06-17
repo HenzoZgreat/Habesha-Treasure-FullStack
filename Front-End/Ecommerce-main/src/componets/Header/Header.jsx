@@ -3,7 +3,9 @@ import HeaderBottom from './HeaderBottom';
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import PersonIcon from '@mui/icons-material/Person';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { allItems } from '../constant/headerItems';
 import { useSelector, useDispatch } from 'react-redux';
 import { setLanguage } from '../../redux/HabeshaSlice';
@@ -48,7 +50,6 @@ const Header = () => {
       navigate(`/search?q=${encodeURIComponent(searchItem.trim())}`);
       setShowAll(false);
     }
-    console.log(products.length);
   };
 
   const handleSignOut = () => {
@@ -60,8 +61,7 @@ const Header = () => {
 
   const text = {
     EN: {
-      deliverTo: 'Delivered To',
-      country: 'USA',
+      yourFavorites: 'Your Favorites',
       signIn: 'Hello, Sign In',
       accountList: 'Account & List',
       returns: 'Return',
@@ -72,8 +72,7 @@ const Header = () => {
       signOut: 'Sign Out',
     },
     AMH: {
-      deliverTo: 'የተላከበት',
-      country: 'አሜሪካ',
+      yourFavorites: 'የእርስዎ ተወዳጆች',
       signIn: 'ሰላም፣ ግባ',
       accountList: 'መለያ እና ዝርዝር',
       returns: 'መመለስ',
@@ -103,18 +102,19 @@ const Header = () => {
           </div>
         </Link>
 
-        <div className="headerHover hidden md1:inline-flex items-center">
-          <LocationOnIcon />
-          <p className="text-sm text-lightText font-light flex flex-col">
-            {currentText.deliverTo}{' '}
-            <span className="text-sm font-semibold -mt-1 text-whiteText">{currentText.country}</span>
-          </p>
-        </div>
+        <Link to="/favorites">
+          <div className="headerHover hidden md1:inline-flex items-center gap-1">
+            <FavoriteIcon />
+            <p className="text-sm text-lightText font-light flex flex-col">
+              {currentText.yourFavorites}
+            </p>
+          </div>
+        </Link>
 
         <div className="h-10 rounded-md hidden lg1:flex flex-grow relative items-center">
           <span
             onClick={() => setShowAll(!showAll)}
-            className="h-full w-14 bg-gray-200 hover:bg-grey-300 border-2 cursor-pointer duration-300 text-sm text-habesha_blue font-titleFont flex items-center justify-center rounded-tl-md rounded-bl-md"
+            className="h-full w-14 bg-gray-200 hover:bg-gray-300 border-2 cursor-pointer duration-300 text-sm text-habesha_blue font-titleFont flex items-center justify-center rounded-tl-md rounded-bl-md"
           >
             {currentText.all} <ArrowDropDownIcon />
           </span>
@@ -197,21 +197,23 @@ const Header = () => {
               {currentText.accountList} <ArrowDropDownIcon />
             </p>
             {showAccountDropdown && (
-              <div className="absolute top-8 w-48 bg-white border-[1px] border-habesha_blue text-black p-4 flex flex-col gap-2 z-50 opacity-0 transform translate-y-2 transition-all duration-300 ease-in-out"
-                style={{ opacity: showAccountDropdown ? 1 : 0, transform: showAccountDropdown ? 'translateY(0)' : 'translateY(2px)' }}
+              <div className="absolute top-8 right-0 w-48 bg-white border-[1px] border-habesha_blue text-habesha_blue p-4 flex flex-col gap-3 z-50 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out sm:w-[calc(100vw-2rem)] sm:right-[-2rem] sm:max-w-xs"
+                style={{ transform: showAccountDropdown ? 'translateY(0) scale(1)' : 'translateY(-10px) scale(0.95)', opacity: showAccountDropdown ? 1 : 0 }}
               >
-                <div className="flex justify-center">
-                  <img className="h-8 w-8 rounded-md" src={HabeshaLogo} alt="logo" />
+                <div className="flex justify-center mb-2">
+                  <img className="h-10 w-10 rounded-full border-2 border-habesha_yellow" src={HabeshaLogo} alt="logo" />
                 </div>
                 <Link to="/profile">
-                  <button className="w-full py-2 text-sm font-normal rounded-sm bg-gradient-to-t from-[#f7dfa5] to-[#f0c14b] hover:bg-gradient-to-b border border-zinc-400 active:border-yellow-800 active:shadow-habeshaInput">
+                  <button className="w-full py-3 px-4 text-sm font-medium rounded-md bg-white hover:bg-habesha_yellow hover:text-habesha_blue border border-habesha_blue flex items-center gap-2 transition-transform duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-habesha_yellow">
+                    <PersonIcon className="text-habesha_blue" />
                     {currentText.profile}
                   </button>
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="w-full py-2 text-sm font-normal rounded-sm bg-gradient-to-t from-slate-200 to-slate-100 hover:bg-gradient-to-b border border-zinc-400 active:border-yellow-800 active:shadow-habeshaInput"
+                  className="w-full py-3 px-4 text-sm font-medium rounded-md bg-white hover:bg-habesha_yellow hover:text-habesha_blue border border-habesha_blue flex items-center gap-2 transition-transform duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-habesha_yellow"
                 >
+                  <LogoutIcon className="text-habesha_blue" />
                   {currentText.signOut}
                 </button>
               </div>

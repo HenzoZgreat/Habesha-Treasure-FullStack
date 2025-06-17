@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import DeleteIcon from '@mui/icons-material/Delete';
-import userProductService from '../../../services/userProductService';
-import { useSelector, useNavigate } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import userProductService from '../../service/userProductService';
+
+
 
 const ProductReviews = ({ productId }) => {
   const language = useSelector((state) => state.habesha.language);
@@ -16,23 +19,27 @@ const ProductReviews = ({ productId }) => {
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [hasReviewed, setHasReviewed] = useState(false);
-  const currentUserId = localStorage.getItem('userId');
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
-    const fetchReviews = async () => {
+    const fetchData = async () => {
       try {
-        const reviewsResponse = await userProductService.getReviews(productId);
+        const [userResponse, reviewsResponse] = await Promise.all([
+          userProductService.getCurrentUserId(),
+          userProductService.getReviews(productId)
+        ]);
+        const userId = userResponse.data.userId;
+        setCurrentUserId(userId);
         const reviewsData = Array.isArray(reviewsResponse.data) ? reviewsResponse.data : [];
         console.log('Reviews response:', reviewsResponse.data); // Debug log
         setReviews(reviewsData);
-        setHasReviewed(reviewsData.some(review => review.userId === parseInt(currentUserId)));
+        setHasReviewed(reviewsData.some(review => review.userId === userId));
         setReviewsLoading(false);
       } catch (err) {
-        console.error('Failed to fetch reviews:', err);
+        console.error('Failed to fetch data:', err);
         console.error('Error response:', err.response?.data); // Debug log
         if (err.response && [401, 403].includes(err.response.status)) {
           localStorage.removeItem('token');
-          localStorage.removeItem('userId');
           navigate('/SignIn');
         } else {
           setReviews([]);
@@ -41,15 +48,8 @@ const ProductReviews = ({ productId }) => {
         setReviewsLoading(false);
       }
     };
-    if (currentUserId) {
-      fetchReviews();
-    } else {
-      setReviews([]);
-      setReviewsLoading(false);
-      setError('Please sign in to view reviews.');
-      navigate('/SignIn');
-    }
-  }, [productId, navigate, currentUserId]);
+    fetchData();
+  }, [productId, navigate]);
 
   const text = {
     EN: {
@@ -100,7 +100,6 @@ const ProductReviews = ({ productId }) => {
       console.error('Failed to submit review:', err);
       if (err.response && [401, 403].includes(err.response.status)) {
         localStorage.removeItem('token');
-        localStorage.removeItem('userId');
         navigate('/SignIn');
       } else {
         setError(err.response?.data?.message || 'Failed to submit review.');
@@ -123,7 +122,6 @@ const ProductReviews = ({ productId }) => {
       console.error('Failed to delete review:', err);
       if (err.response && [401, 403].includes(err.response.status)) {
         localStorage.removeItem('token');
-        localStorage.removeItem('userId');
         navigate('/SignIn');
       } else {
         alert(`Failed to delete review: ${err.response?.data?.message || 'Server error'}`);
@@ -237,7 +235,7 @@ const ProductReviews = ({ productId }) => {
                     {review.reviewer}
                   </span>
                 </div>
-                {review.userId === parseInt(currentUserId) && (
+                {review.userId === currentUserId && (
                   <button
                     onClick={handleDeleteReview}
                     className="text-red-600 hover:text-red-800 text-sm flex items-center gap-1"

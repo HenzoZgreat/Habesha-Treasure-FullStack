@@ -1,7 +1,7 @@
 package com.HabeshaTreasure.HabeshaTreasure.Controller;
 
+import com.HabeshaTreasure.HabeshaTreasure.DTO.ReviewResponseDTO;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Products;
-import com.HabeshaTreasure.HabeshaTreasure.Entity.Review;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.User;
 import com.HabeshaTreasure.HabeshaTreasure.Service.FavoriteProductService;
 import com.HabeshaTreasure.HabeshaTreasure.Service.ProductsService;
@@ -41,28 +41,8 @@ public class ProductsUserController {
         }
     }
 
-    @PatchMapping("/{id}/rate")
-    public ResponseEntity<?> rateProduct(@PathVariable Integer id, @RequestParam int rating) {
-        if (rating < 1 || rating > 5) {
-            return ResponseEntity.badRequest().body("Rating must be between 1 and 5");
-        }
-        productsService.rateProduct(id, rating);
-        return ResponseEntity.ok("Rating submitted");
-    }
 
-    @PatchMapping("/{id}/favorites/increment")
-    public ResponseEntity<?> incrementFavorites(@PathVariable Integer id) {
-        productsService.incrementFavorites(id);
-        return ResponseEntity.ok("Favorites incremented");
-    }
-
-    @PatchMapping("/{id}/favorites/decrement")
-    public ResponseEntity<?> decrementFavorites(@PathVariable Integer id) {
-        productsService.decrementFavorites(id);
-        return ResponseEntity.ok("Favorites decremented");
-    }
-
-
+//===================================================================================
 
     // Favorites
     @PostMapping("/{id}/favorite")
@@ -83,6 +63,12 @@ public class ProductsUserController {
     }
 
     // Reviews
+    @GetMapping("/{id}/reviews")
+    public ResponseEntity<List<ReviewResponseDTO>> getReviews(@PathVariable Integer id) {
+        return ResponseEntity.ok(reviewService.getReviewsForProduct(id));
+    }
+
+
     @PostMapping("/{id}/review")
     public ResponseEntity<?> review(@PathVariable Integer id,
                                     @RequestBody Map<String, Object> body,
@@ -93,10 +79,7 @@ public class ProductsUserController {
         return ResponseEntity.ok("Review submitted");
     }
 
-    @GetMapping("/{id}/reviews")
-    public ResponseEntity<List<Review>> getReviews(@PathVariable Integer id) {
-        return ResponseEntity.ok(reviewService.getReviewsForProduct(id));
-    }
+
 
     @DeleteMapping("/{id}/review")
     public ResponseEntity<?> deleteReview(@PathVariable Integer id, @AuthenticationPrincipal User user) {

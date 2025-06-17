@@ -9,6 +9,7 @@ import com.HabeshaTreasure.HabeshaTreasure.Service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -100,6 +101,13 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/me/id")
+    public ResponseEntity<?> getCurrentUserId(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+        }
+        return ResponseEntity.ok(Map.of("userId", user.getId()));
+    }
 
 
 }

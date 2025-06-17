@@ -17,22 +17,40 @@ const Product = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [favorites, setFavorites] = useState({}); // Track favorite state per product
+  const [favorites, setFavorites] = useState({});
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await userProductService.getProducts();
         setProducts(response.data);
+        // Fetch favorite status for each product
+        const favoritePromises = response.data.map((item) =>
+          userProductService.isFavorited(item.id).then((res) => ({
+            id: item.id,
+            favorited: res.data.favorited,
+          }))
+        );
+        const favoriteResults = await Promise.all(favoritePromises);
+        const favoritesMap = favoriteResults.reduce(
+          (acc, { id, favorited }) => ({ ...acc, [id]: favorited }),
+          {}
+        );
+        setFavorites(favoritesMap);
         setLoading(false);
       } catch (err) {
         console.error('Failed to fetch products:', err);
-        setError('Failed to load products.');
+        if (err.response && [401, 403].includes(err.response.status)) {
+          localStorage.removeItem('token');
+          navigate('/SignIn');
+        } else {
+          setError('Failed to load products.');
+        }
         setLoading(false);
       }
     };
     fetchProducts();
-  }, []);
+  }, [navigate]);
 
   const text = {
     EN: {
@@ -72,18 +90,22 @@ const Product = () => {
   };
 
   const handleToggleFavorite = async (item) => {
-    const isFavorited = favorites[item.id];
     try {
-      if (isFavorited) {
-        await userProductService.decrementFavorites(item.id);
+      if (favorites[item.id]) {
+        await userProductService.unfavorite(item.id);
         setFavorites((prev) => ({ ...prev, [item.id]: false }));
       } else {
-        await userProductService.incrementFavorites(item.id);
+        await userProductService.favorite(item.id);
         setFavorites((prev) => ({ ...prev, [item.id]: true }));
       }
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
-      alert(`Failed to update favorite: ${err.response?.data?.message || 'Server error'}`);
+      if (err.response && [401, 403].includes(err.response.status)) {
+        localStorage.removeItem('token');
+        navigate('/SignIn');
+      } else {
+        alert(`Failed to update favorite: ${err.response?.data?.message || 'Server error'}`);
+      }
     }
   };
 

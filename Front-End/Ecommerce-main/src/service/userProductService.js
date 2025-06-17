@@ -12,30 +12,55 @@ const getProductById = async (id) => {
   return api.get(`${API_URL}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
 };
 
-const incrementFavorites = async (id) => {
+const favorite = async (id) => {
   const token = localStorage.getItem('token');
-  const response = await api.patch(`${API_URL}/${id}/favorites/increment`, {}, { headers: { Authorization: `Bearer ${token}` } });
+  const response = await api.post(`${API_URL}/${id}/favorite`, {}, { headers: { Authorization: `Bearer ${token}` } });
   return { data: { message: response.data } };
 };
 
-const decrementFavorites = async (id) => {
+const unfavorite = async (id) => {
   const token = localStorage.getItem('token');
-  const response = await api.patch(`${API_URL}/${id}/favorites/decrement`, {}, { headers: { Authorization: `Bearer ${token}` } });
+  const response = await api.delete(`${API_URL}/${id}/favorite`, { headers: { Authorization: `Bearer ${token}` } });
   return { data: { message: response.data } };
+};
+
+const isFavorited = async (id) => {
+  const token = localStorage.getItem('token');
+  return api.get(`${API_URL}/${id}/is-favorited`, { headers: { Authorization: `Bearer ${token}` } });
 };
 
 const submitReview = async (id, review) => {
   const token = localStorage.getItem('token');
-  const response = await api.post(`${API_URL}/${id}/reviews`, review, { headers: { Authorization: `Bearer ${token}` } });
+  const response = await api.post(`${API_URL}/${id}/review`, review, { headers: { Authorization: `Bearer ${token}` } });
   return { data: { message: response.data } };
+};
+
+const getReviews = async (id) => {
+  const token = localStorage.getItem('token');
+  return api.get(`${API_URL}/${id}/reviews`, { headers: { Authorization: `Bearer ${token}` } });
+};
+
+const deleteReview = async (id) => {
+  const token = localStorage.getItem('token');
+  const response = await api.delete(`${API_URL}/${id}/review`, { headers: { Authorization: `Bearer ${token}` } });
+  return { data: { message: response.data } };
+};
+
+const getCurrentUserId = async () => {
+  const token = localStorage.getItem('token');
+  return api.get('/auth/me/id', { headers: { Authorization: `Bearer ${token}` } });
 };
 
 const userProductService = {
   getProducts,
   getProductById,
-  incrementFavorites,
-  decrementFavorites,
-  submitReview
+  favorite,
+  unfavorite,
+  isFavorited,
+  submitReview,
+  getReviews,
+  deleteReview,
+  getCurrentUserId
 };
 
 export default userProductService;

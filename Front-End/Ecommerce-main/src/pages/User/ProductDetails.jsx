@@ -14,7 +14,7 @@ import SecurityIcon from "@mui/icons-material/Security"
 import { addToCart } from "../../redux/HabeshaSlice"
 import { v4 as uuidv4 } from "uuid"
 import userProductService from "../../service/userProductService"
-import ProductReviews from "../../componets/Home/ProductReviews"
+import ProductReviews from "../../componets/products/ProductReviews"
 
 const ProductDetails = () => {
   const { id } = useParams()
@@ -32,23 +32,26 @@ const ProductDetails = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await userProductService.getProductById(id)
-        setProduct(response.data)
-        setIsFavorite(response.data.favorites > 0)
-        setLoading(false)
+        const [productResponse, favoriteResponse] = await Promise.all([
+          userProductService.getProductById(id),
+          userProductService.isFavorited(id)
+        ]);
+        setProduct(productResponse.data);
+        setIsFavorite(favoriteResponse.data.favorited);
+        setLoading(false);
       } catch (err) {
-        console.error("Failed to fetch product:", err)
+        console.error("Failed to fetch product:", err);
         if (err.response && [401, 403].includes(err.response.status)) {
-          localStorage.removeItem('token')
-          navigate('/SignIn')
+          localStorage.removeItem('token');
+          navigate('/SignIn');
         } else {
-          setError("Failed to load product details.")
+          setError("Failed to load product details.");
         }
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchProduct()
-  }, [id, navigate])
+    };
+    fetchProduct();
+  }, [id, navigate]);
 
   const text = {
     EN: {
@@ -89,19 +92,19 @@ const ProductDetails = () => {
       share: "አጋራ",
       relatedProducts: "ተዛማጅ ምርቶች",
     },
-  }
+  };
 
-  const currentText = text[language]
-  const USD_TO_ETB_RATE = 150
+  const currentText = text[language];
+  const USD_TO_ETB_RATE = 150;
 
   const getDisplayPrice = (price) => {
-    return language === "EN" ? price : price * USD_TO_ETB_RATE
-  }
+    return language === "EN" ? price : price * USD_TO_ETB_RATE;
+  };
 
   const handleAddToCart = () => {
-    if (!product) return
+    if (!product) return;
 
-    const itemId = product.id ?? uuidv4()
+    const itemId = product.id ?? uuidv4();
     dispatch(
       addToCart({
         id: itemId,
@@ -111,43 +114,43 @@ const ProductDetails = () => {
         description: language === "AMH" ? product.descriptionAm : product.descriptionEn,
         category: product.category,
         quantity: quantity,
-      }),
-    )
-  }
+      })
+    );
+  };
 
   const handleToggleFavorite = async () => {
     try {
       if (isFavorite) {
-        await userProductService.decrementFavorites(product.id)
-        setIsFavorite(false)
+        await userProductService.unfavorite(product.id);
+        setIsFavorite(false);
       } else {
-        await userProductService.incrementFavorites(product.id)
-        setIsFavorite(true)
+        await userProductService.favorite(product.id);
+        setIsFavorite(true);
       }
     } catch (err) {
-      console.error("Failed to toggle favorite:", err)
+      console.error("Failed to toggle favorite:", err);
       if (err.response && [401, 403].includes(err.response.status)) {
-        localStorage.removeItem('token')
-        navigate('/SignIn')
+        localStorage.removeItem('token');
+        navigate('/SignIn');
       } else {
-        alert(`Failed to update favorite: ${err.response?.data?.message || "Server error"}`)
+        alert(`Failed to update favorite: ${err.response?.data?.message || "Server error"}`);
       }
     }
-  }
+  };
 
   const renderStars = (rating) => {
-    const stars = []
+    const stars = [];
     for (let i = 1; i <= 5; i++) {
       stars.push(
         i <= rating ? (
           <StarIcon key={i} className="text-yellow-400 text-sm" />
         ) : (
           <StarBorderIcon key={i} className="text-gray-300 text-sm" />
-        ),
-      )
+        )
+      );
     }
-    return stars
-  }
+    return stars;
+  };
 
   if (loading) {
     return (
@@ -164,7 +167,7 @@ const ProductDetails = () => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !product) {
@@ -178,7 +181,7 @@ const ProductDetails = () => {
           {currentText.backToProducts}
         </button>
       </div>
-    )
+    );
   }
 
   return (
@@ -228,9 +231,7 @@ const ProductDetails = () => {
         {/* Product Info */}
         <div className="space-y-6">
           <div>
-            <span className="inline-block px-3 py-1 bg-habesha_blue/10 text-habesha_blue text-sm font-medium rounded-full mb-3">
-              {product.category}
-            </span>
+            <label className="inline-block px-3 py-1 bg-habesha_blue/10 text-habesha_blue text-sm font-semibold rounded-full mb-3">{product.category}</label>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
 
             {/* Rating */}
@@ -248,13 +249,9 @@ const ProductDetails = () => {
                 {getDisplayPrice(product.price)}
               </span>
               {product.stock > 0 ? (
-                <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-                  {currentText.inStock} ({product.stock})
-                </span>
+                <label className="px-3 py-1 bg-green-100 text-white text-sm font-semibold rounded-full">{currentText.inStock} ({product.stock})</label>
               ) : (
-                <span className="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
-                  {currentText.outOfStock}
-                </span>
+                <label className="px-3 py-1 bg-red-100 text-white text-sm font-semibold rounded-full">{currentText.outOfStock}</label>
               )}
             </div>
           </div>
@@ -302,11 +299,11 @@ const ProductDetails = () => {
 
             <button
               onClick={() => {
-                handleAddToCart()
-                navigate("/cart")
+                handleAddToCart();
+                navigate("/cart");
               }}
               disabled={product.stock === 0}
-              className="flex-1 bg-habesha_blue hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-habesha_blue hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {currentText.buyNow}
             </button>
@@ -392,7 +389,50 @@ const ProductDetails = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProductDetails
+export default ProductDetails;
+
+
+// ### Testing
+// 1. **Backend**:
+//    - **GET /api/user/products/{id}/is-favorited**: Returns `{ favorited: true/false }`.
+//    - **POST /api/user/products/{id}/favorite**: Returns `"Favorited"`.
+//    - **DELETE /api/user/products/{id}/favorite**: Returns `"Unfavorited"`.
+//    - **GET /api/user/products/{id}/reviews**: Returns array of reviews with `id`, `userId`, `username`, `rating`, `comment`, `createdAt`.
+//    - **POST /api/user/products/{id}/review**: Test `{ rating: 4, comment: "Great!" }` → Returns `"Review submitted"`.
+//    - **DELETE /api/user/products/{id}/review**: Deletes user's review, returns `"Review deleted"`.
+//    - Test 401/403 with invalid token, 404 for invalid product ID.
+// 2. **Frontend**:
+//    - **Home Page (Product.jsx)**:
+//      - Favorite buttons show red for favorited products.
+//      - Toggle favorite → Updates button color, sends correct request.
+//      - 401/403 → Redirects to `/SignIn`.
+//    - **Product Details (ProductDetails.jsx)**:
+//      - Favorite button reflects `isFavorited` status.
+//      - Reviews section shows all reviews in cards with stars, username, date, comment.
+//      - Submit review → Form resets, reviews refresh.
+//      - Delete own review → Review disappears, confirm dialog shown.
+//      - Verify styling (`habesha_blue`, `yellow-400`, `bg-gray-50`).
+// 3. **Edge Cases**:
+//    - No reviews → Shows "No reviews yet".
+//    - Invalid product ID → Shows error, navigates to `/`.
+//    - Empty comment → Submits with rating only.
+//    - Long comment → Truncates at 500 characters.
+//    - Unauthenticated user → Redirects to `/SignIn` for favorite/review actions.
+
+// ### Notes
+// - **UserId Placeholder**: `currentUserId` uses `localStorage.getItem('userId')`. Replace with your actual user ID retrieval method (e.g., from token or Redux).
+// - **Review Schema**: Assumed `username`, `userId`, `createdAt`. If different, update `ProductReviews.jsx` accordingly.
+// - **Delete Review**: Added delete button for user's own reviews, using `DELETE /api/user/products/{id}/review`. Confirm if user identification is correct.
+// - **Styling**: Reviews use `bg-gray-50` cards with `habesha_blue` accents, matching the e-commerce aesthetic.
+
+// ### Next Steps
+// - Apply `userProductService.js`, `Product.jsx`, `ProductReviews.jsx`, `ProductDetails.jsx`.
+// - Implement `POST /api/user/products/{id}/review` and `DELETE /api/user/products/{id}/review` in your backend if not already done.
+// - Test with your backend, ensuring token authentication works.
+// - Provide review schema details or user ID retrieval method.
+// - Share feedback on the reviews design or any issues.
+
+// Let me know if you need backend code snippets or further adjustments! Thanks for the trust—I’ve got this!

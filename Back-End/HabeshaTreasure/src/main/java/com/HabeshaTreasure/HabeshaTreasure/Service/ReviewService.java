@@ -1,5 +1,6 @@
 package com.HabeshaTreasure.HabeshaTreasure.Service;
 
+import com.HabeshaTreasure.HabeshaTreasure.DTO.ReviewResponseDTO;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Products;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Review;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.User;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -88,10 +90,23 @@ public class ReviewService {
     }
 
 
-    public List<Review> getReviewsForProduct(Integer productId) {
+    public List<ReviewResponseDTO> getReviewsForProduct(Integer productId) {
         Products product = productsRepo.findById(productId)
                 .orElseThrow(() -> new NoSuchElementException("Product not found"));
-        return reviewRepo.findByProduct(product);
+
+        List<Review> reviews = reviewRepo.findByProduct(product);
+
+        return reviews.stream()
+                .map(r -> new ReviewResponseDTO(
+                        r.getUser().getId(),
+                        r.getUser().getUsersInfo().getFirstName() + " " + r.getUser().getUsersInfo().getLastName(),
+                        r.getRating(),
+                        r.getComment(),
+                        r.getReviewedAt()
+                ))
+                .collect(Collectors.toList());
     }
+
+
 }
 

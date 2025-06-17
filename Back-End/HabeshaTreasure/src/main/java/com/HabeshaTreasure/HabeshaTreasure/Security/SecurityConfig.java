@@ -51,7 +51,12 @@ public class SecurityConfig {
                 }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/validate", "/login/oauth2/code/google", "/api/user/products").permitAll()
+                        .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/validate",
+                                "/login/oauth2/code/google",
+                                "/api/user/products").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

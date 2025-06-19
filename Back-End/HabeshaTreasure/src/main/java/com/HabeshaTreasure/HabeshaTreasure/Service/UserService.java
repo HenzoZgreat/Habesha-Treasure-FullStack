@@ -1,5 +1,6 @@
 package com.HabeshaTreasure.HabeshaTreasure.Service;
 
+import com.HabeshaTreasure.HabeshaTreasure.DTO.UserProfileUpdateDTO;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.UserRequestDTO;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.UserResponseDTO;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Role;
@@ -151,6 +152,21 @@ public class UserService {
         user.setUsersInfo(info); // link back
 
         userRepository.save(user); // saves both due to cascade
+    }
+
+    //===================================================================
+
+    public void updateProfile(User user, UserProfileUpdateDTO dto) {
+        UsersInfo info = user.getUsersInfo();
+
+        if (dto.getFirstName() != null) info.setFirstName(dto.getFirstName());
+        if (dto.getLastName() != null) info.setLastName(dto.getLastName());
+        if (dto.getPhoneNumber() != null) info.setPhoneNumber(dto.getPhoneNumber());
+        if (dto.getCity() != null) info.setCity(dto.getCity());
+        if (dto.getCountry() != null) info.setCountry(dto.getCountry());
+        if (dto.getRegion() != null) info.setRegion(dto.getRegion());
+
+        usersInfoRepository.save(info); // repo already injected
     }
 
 }

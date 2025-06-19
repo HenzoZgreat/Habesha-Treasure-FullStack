@@ -12,6 +12,11 @@ const getProductById = async (id) => {
   return api.get(`${API_URL}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
 };
 
+const getFavorites = async () => {
+  const token = localStorage.getItem('token');
+  return api.get(`${API_URL}/favorites`, { headers: { Authorization: `Bearer ${token}` } });
+};
+
 const favorite = async (id) => {
   const token = localStorage.getItem('token');
   const response = await api.post(`${API_URL}/${id}/favorite`, {}, { headers: { Authorization: `Bearer ${token}` } });
@@ -54,6 +59,7 @@ const getCurrentUserId = async () => {
 const userProductService = {
   getProducts,
   getProductById,
+  getFavorites,
   favorite,
   unfavorite,
   isFavorited,

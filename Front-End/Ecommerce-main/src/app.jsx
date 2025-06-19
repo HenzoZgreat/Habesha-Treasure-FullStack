@@ -16,6 +16,9 @@ import Cart from "./pages/Cart";
 import SignIn from "./pages/SignIn";
 import Regestration from "./pages/Regestration";
 import ProductDetails from "./pages/User/ProductDetails"; // Assuming you have a ProductDetails page
+import Favorites from "./pages/User/FavoritesPage"; // Assuming you have a Favorites page
+import UserProfile from "./pages/User/ProfilePage"; // Assuming you have a Profile page
+import OrdersPage from "./pages/User/OrdersPage";
 
 // Import the Admin Layout
 import AdminDashboardLayout from "./layout/AdminDashboardLayout"; // Assuming this is your layout file
@@ -53,6 +56,11 @@ function App() {
           <Route index element={<Home />} loader={productsData}></Route>
           <Route path="/product/:id" element={<ProductDetails />} /> {/* Product details page */}
           <Route path="/cart" element={<Cart />}></Route>
+          <Route path="/favorites" element={<Favorites />}></Route>
+          <Route path="/profile" element={<UserProfile />}></Route> {/* User Profile page */}
+          <Route path="/orders" element={<OrdersPage />}></Route> {/* User Orders page */}
+          
+          {/* Default route for the root path */}
           {/* Add other public routes here if they share the Header/Footer Layout */}
         </Route>
 

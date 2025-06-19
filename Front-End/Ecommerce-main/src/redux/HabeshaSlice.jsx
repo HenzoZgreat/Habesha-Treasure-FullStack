@@ -13,7 +13,6 @@ export const habeshaSlice = createSlice({
   initialState,
   reducers: {
     addToCart: (state, action) => {
-     
       const item = state.cartProducts.find((item) => item.id === action.payload.id);
       if (item) {
         item.quantity += action.payload.quantity;
@@ -47,6 +46,10 @@ export const habeshaSlice = createSlice({
       state.cartProducts = [];
       localStorage.setItem('cartProducts', JSON.stringify(state.cartProducts));
     },
+    setCart: (state, action) => {
+      state.cartProducts = action.payload;
+      localStorage.setItem('cartProducts', JSON.stringify(state.cartProducts));
+    },
     setAllProducts: (state, action) => {
       state.allApiProducts = action.payload;
     },
@@ -68,6 +71,7 @@ export const {
   resetCart,
   incrementQuantity,
   decrementQuantity,
+  setCart,
   setAllProducts,
   setUserInfo,
   setSearchTerm,

@@ -32,7 +32,7 @@ public class JwtUtil {
         this.SECRET_KEY = Keys.hmacShaKeyFor(secretKeyString.getBytes());
     }
     // Token validity duration in milliseconds (e.g., 1 hour)
-    private final long TOKEN_VALIDITY = 60 * 60 * 1000;
+    private final long TOKEN_VALIDITY = 5 * 60 * 60 * 1000;
 
 
 

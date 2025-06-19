@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
+import userProductService from '../../service/userProductService';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import userProductService from '../../service/userProductService';
-
-
 
 const ProductReviews = ({ productId }) => {
   const language = useSelector((state) => state.habesha.language);
@@ -20,36 +20,46 @@ const ProductReviews = ({ productId }) => {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+    try {
+      setReviewsLoading(true);
+      const reviewsResponse = await userProductService.getReviews(productId);
+      const reviewsData = Array.isArray(reviewsResponse.data) ? reviewsResponse.data : [];
+      setReviews(reviewsData);
+      setReviewsLoading(false);
+    } catch (err) {
+      console.error('Failed to fetch reviews:', err);
+      setError(err.response?.data?.message || currentText.failedToLoadReviews);
+      setReviews([]);
+      setReviewsLoading(false);
+    }
+
+    const token = localStorage.getItem('token');
+    if (token) {
       try {
-        const [userResponse, reviewsResponse] = await Promise.all([
-          userProductService.getCurrentUserId(),
-          userProductService.getReviews(productId)
-        ]);
+        const userResponse = await userProductService.getCurrentUserId();
         const userId = userResponse.data.userId;
         setCurrentUserId(userId);
-        const reviewsData = Array.isArray(reviewsResponse.data) ? reviewsResponse.data : [];
-        console.log('Reviews response:', reviewsResponse.data); // Debug log
-        setReviews(reviewsData);
-        setHasReviewed(reviewsData.some(review => review.userId === userId));
-        setReviewsLoading(false);
+        setHasReviewed(reviews.some(review => review.userId === userId));
       } catch (err) {
-        console.error('Failed to fetch data:', err);
-        console.error('Error response:', err.response?.data); // Debug log
+        console.error('Failed to fetch user ID:', err);
         if (err.response && [401, 403].includes(err.response.status)) {
           localStorage.removeItem('token');
+          setCurrentUserId(null);
+          setError(currentText.loginPrompt);
+          setTimeout(() => setError(null), 3000);
           navigate('/SignIn');
-        } else {
-          setReviews([]);
-          setError(err.response?.data?.message || 'Failed to load reviews. Please try again later.');
         }
-        setReviewsLoading(false);
       }
-    };
+    }
+    setUserLoading(false);
+  };
+
+  useEffect(() => {
     fetchData();
-  }, [productId, navigate]);
+  }, [productId]);
 
   const text = {
     EN: {
@@ -62,6 +72,9 @@ const ProductReviews = ({ productId }) => {
       noReviews: 'No reviews yet. Be the first to review!',
       postedOn: 'Posted on',
       delete: 'Delete',
+      loginPrompt: 'Please sign in to submit a review.',
+      failedToLoadReviews: 'Failed to load reviews.',
+      loading: 'Loading...',
     },
     AMH: {
       writeReview: 'ግምገማ ይፃፉ',
@@ -73,6 +86,9 @@ const ProductReviews = ({ productId }) => {
       noReviews: 'ገና ግምገማ የለም። የመጀመሪያው ግምገማ ይሁኑ!',
       postedOn: 'ተለጠፈ በ',
       delete: 'ሰርዝ',
+      loginPrompt: 'ግምገማ ለማስገባት እባክዎ ይግቡ።',
+      failedToLoadReviews: 'ግምገማዎችን መጫን አልተሳካም።',
+      loading: 'በመጫን ላይ...',
     },
   };
 
@@ -80,8 +96,15 @@ const ProductReviews = ({ productId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!currentUserId) {
+      setError(currentText.loginPrompt);
+      setTimeout(() => setError(null), 3000);
+      navigate('/SignIn');
+      return;
+    }
     if (rating < 1) {
       setError(currentText.required);
+      setTimeout(() => setError(null), 3000);
       return;
     }
     try {
@@ -90,42 +113,34 @@ const ProductReviews = ({ productId }) => {
       setRating(0);
       setComment('');
       setError(null);
-      const response = await userProductService.getReviews(productId);
-      const reviewsData = Array.isArray(response.data) ? response.data : [];
-      console.log('Refreshed reviews:', response.data); // Debug log
-      setReviews(reviewsData);
-      setHasReviewed(true);
+      await fetchData();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Failed to submit review:', err);
-      if (err.response && [401, 403].includes(err.response.status)) {
-        localStorage.removeItem('token');
-        navigate('/SignIn');
-      } else {
-        setError(err.response?.data?.message || 'Failed to submit review.');
-      }
+      setError(err.response?.data?.message || 'Failed to submit review.');
+      setTimeout(() => setError(null), 3000);
     }
   };
 
   const handleDeleteReview = async () => {
+    if (!currentUserId) {
+      setError(currentText.loginPrompt);
+      setTimeout(() => setError(null), 3000);
+      navigate('/SignIn');
+      return;
+    }
     if (!window.confirm(language === 'AMH' ? 'ይህን ግምገማ መሰረዝ ይፈልጋሉ?' : 'Are you sure you want to delete this review?')) {
       return;
     }
     try {
       await userProductService.deleteReview(productId);
-      const response = await userProductService.getReviews(productId);
-      const reviewsData = Array.isArray(response.data) ? response.data : [];
-      console.log('Refreshed reviews after delete:', response.data); // Debug log
-      setReviews(reviewsData);
-      setHasReviewed(false);
+      setSuccess('Review deleted successfully!');
+      await fetchData();
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Failed to delete review:', err);
-      if (err.response && [401, 403].includes(err.response.status)) {
-        localStorage.removeItem('token');
-        navigate('/SignIn');
-      } else {
-        alert(`Failed to delete review: ${err.response?.data?.message || 'Server error'}`);
-      }
+      setError(err.response?.data?.message || 'Failed to delete review.');
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -170,20 +185,43 @@ const ProductReviews = ({ productId }) => {
     });
   };
 
+  if (userLoading || reviewsLoading) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mt-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-habesha_blue mx-auto mb-2"></div>
+        <p className="text-gray-600 text-sm">{currentText.loading}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 mt-8">
+    <div className="bg-white border border-gray-200 rounded-lg p-6 mt-8 relative">
+      {(success || error) && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300">
+          <div className={`bg-white border-l-4 ${success ? 'border-green-500' : 'border-red-500'} shadow-2xl rounded-lg p-4 max-w-sm mx-auto`}>
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                {success ? (
+                  <CheckCircleIcon className="text-green-500 text-xl" />
+                ) : (
+                  <span className="text-red-500 text-xl">⚠</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-habesha_blue">{success || error}</p>
+              </div>
+              <button
+                onClick={() => success ? setSuccess(null) : setError(null)}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <CloseIcon className="text-sm" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <h3 className="text-xl font-semibold text-gray-900 mb-4">{currentText.writeReview}</h3>
-      {success && (
-        <div className="mb-4 p-3 bg-green-100 text-green-800 rounded-md text-sm">
-          {success}
-        </div>
-      )}
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-800 rounded-md text-sm">
-          {error}
-        </div>
-      )}
-      {!hasReviewed && currentUserId && (
+      {!hasReviewed && currentUserId ? (
         <form onSubmit={handleSubmit} className="space-y-4 mb-8">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -214,7 +252,17 @@ const ProductReviews = ({ productId }) => {
             {currentText.submit}
           </button>
         </form>
-      )}
+      ) : !currentUserId ? (
+        <p className="text-sm text-gray-600 mb-4">
+          {currentText.loginPrompt}{' '}
+          <button
+            onClick={() => navigate('/SignIn')}
+            className="text-habesha_blue hover:underline"
+          >
+            {language === 'AMH' ? 'አሁን ይግቡ' : 'Sign in now'}
+          </button>
+        </p>
+      ) : null}
 
       <h4 className="text-lg font-semibold text-gray-900 mb-4">Customer Reviews</h4>
       {reviewsLoading ? (

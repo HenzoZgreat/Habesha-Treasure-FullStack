@@ -58,9 +58,7 @@ public class FavoriteProductService {
 
 
     public List<Products> getFavorites(User user) {
-        return favoriteRepo.findByUser(user)
-                .stream()
-                .map(FavoriteProduct::getProduct)
-                .toList();
+        return favoriteRepo.findFavoriteProductsByUser(user);
     }
+
 }

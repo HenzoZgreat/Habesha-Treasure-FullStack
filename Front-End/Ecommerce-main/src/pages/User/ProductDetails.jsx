@@ -34,24 +34,19 @@ const ProductDetails = () => {
       try {
         const [productResponse, favoriteResponse] = await Promise.all([
           userProductService.getProductById(id),
-          userProductService.isFavorited(id)
+          userProductService.isFavorited(id).catch(() => ({ data: { favorited: false } })) // Fallback for non-authenticated users
         ]);
         setProduct(productResponse.data);
         setIsFavorite(favoriteResponse.data.favorited);
         setLoading(false);
       } catch (err) {
         console.error("Failed to fetch product:", err);
-        if (err.response && [401, 403].includes(err.response.status)) {
-          localStorage.removeItem('token');
-          navigate('/SignIn');
-        } else {
-          setError("Failed to load product details.");
-        }
+        setError("Failed to load product details. Please try again later.");
         setLoading(false);
       }
     };
     fetchProduct();
-  }, [id, navigate]);
+  }, [id]);
 
   const text = {
     EN: {
@@ -72,6 +67,7 @@ const ProductDetails = () => {
       reviews: "Reviews",
       share: "Share",
       relatedProducts: "Related Products",
+      loginPrompt: "Please sign in to favorite this product.",
     },
     AMH: {
       backToProducts: "ወደ ምርቶች ተመለስ",
@@ -91,6 +87,7 @@ const ProductDetails = () => {
       reviews: "ግምገማዎች",
       share: "አጋራ",
       relatedProducts: "ተዛማጅ ምርቶች",
+      loginPrompt: "ይህን ምርት ለመውደድ እባክዎ ይግቡ።",
     },
   };
 
@@ -119,6 +116,10 @@ const ProductDetails = () => {
   };
 
   const handleToggleFavorite = async () => {
+    if (!localStorage.getItem('token')) {
+      alert(currentText.loginPrompt);
+      return;
+    }
     try {
       if (isFavorite) {
         await userProductService.unfavorite(product.id);
@@ -129,12 +130,7 @@ const ProductDetails = () => {
       }
     } catch (err) {
       console.error("Failed to toggle favorite:", err);
-      if (err.response && [401, 403].includes(err.response.status)) {
-        localStorage.removeItem('token');
-        navigate('/SignIn');
-      } else {
-        alert(`Failed to update favorite: ${err.response?.data?.message || "Server error"}`);
-      }
+      alert(`Failed to update favorite: ${err.response?.data?.message || "Server error"}`);
     }
   };
 
@@ -211,21 +207,6 @@ const ProductDetails = () => {
               className="w-full max-w-md h-96 object-contain"
             />
           </div>
-          {/* Commented out for single image display; may re-enable for multiple images
-          <div className="flex gap-2">
-            {[product.image, product.image, product.image].map((img, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedImage(index)}
-                className={`w-20 h-20 bg-gray-50 rounded-lg p-2 border-2 ${
-                  selectedImage === index ? "border-habesha_blue" : "border-gray-200"
-                } hover:border-habesha_blue transition-colors`}
-              >
-                <img src={img || "/placeholder.svg"} alt="" className="w-full h-full object-contain" />
-              </button>
-            ))}
-          </div>
-          */}
         </div>
 
         {/* Product Info */}
@@ -393,46 +374,3 @@ const ProductDetails = () => {
 };
 
 export default ProductDetails;
-
-
-// ### Testing
-// 1. **Backend**:
-//    - **GET /api/user/products/{id}/is-favorited**: Returns `{ favorited: true/false }`.
-//    - **POST /api/user/products/{id}/favorite**: Returns `"Favorited"`.
-//    - **DELETE /api/user/products/{id}/favorite**: Returns `"Unfavorited"`.
-//    - **GET /api/user/products/{id}/reviews**: Returns array of reviews with `id`, `userId`, `username`, `rating`, `comment`, `createdAt`.
-//    - **POST /api/user/products/{id}/review**: Test `{ rating: 4, comment: "Great!" }` → Returns `"Review submitted"`.
-//    - **DELETE /api/user/products/{id}/review**: Deletes user's review, returns `"Review deleted"`.
-//    - Test 401/403 with invalid token, 404 for invalid product ID.
-// 2. **Frontend**:
-//    - **Home Page (Product.jsx)**:
-//      - Favorite buttons show red for favorited products.
-//      - Toggle favorite → Updates button color, sends correct request.
-//      - 401/403 → Redirects to `/SignIn`.
-//    - **Product Details (ProductDetails.jsx)**:
-//      - Favorite button reflects `isFavorited` status.
-//      - Reviews section shows all reviews in cards with stars, username, date, comment.
-//      - Submit review → Form resets, reviews refresh.
-//      - Delete own review → Review disappears, confirm dialog shown.
-//      - Verify styling (`habesha_blue`, `yellow-400`, `bg-gray-50`).
-// 3. **Edge Cases**:
-//    - No reviews → Shows "No reviews yet".
-//    - Invalid product ID → Shows error, navigates to `/`.
-//    - Empty comment → Submits with rating only.
-//    - Long comment → Truncates at 500 characters.
-//    - Unauthenticated user → Redirects to `/SignIn` for favorite/review actions.
-
-// ### Notes
-// - **UserId Placeholder**: `currentUserId` uses `localStorage.getItem('userId')`. Replace with your actual user ID retrieval method (e.g., from token or Redux).
-// - **Review Schema**: Assumed `username`, `userId`, `createdAt`. If different, update `ProductReviews.jsx` accordingly.
-// - **Delete Review**: Added delete button for user's own reviews, using `DELETE /api/user/products/{id}/review`. Confirm if user identification is correct.
-// - **Styling**: Reviews use `bg-gray-50` cards with `habesha_blue` accents, matching the e-commerce aesthetic.
-
-// ### Next Steps
-// - Apply `userProductService.js`, `Product.jsx`, `ProductReviews.jsx`, `ProductDetails.jsx`.
-// - Implement `POST /api/user/products/{id}/review` and `DELETE /api/user/products/{id}/review` in your backend if not already done.
-// - Test with your backend, ensuring token authentication works.
-// - Provide review schema details or user ID retrieval method.
-// - Share feedback on the reviews design or any issues.
-
-// Let me know if you need backend code snippets or further adjustments! Thanks for the trust—I’ve got this!

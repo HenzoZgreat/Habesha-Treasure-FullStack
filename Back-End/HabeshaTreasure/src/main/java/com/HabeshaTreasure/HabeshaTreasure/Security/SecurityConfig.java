@@ -4,6 +4,7 @@ import com.HabeshaTreasure.HabeshaTreasure.SecurityService.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -55,10 +56,14 @@ public class SecurityConfig {
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/validate",
-                                "/login/oauth2/code/google",
-                                "/api/user/products").permitAll()
+                                "/login/oauth2/code/google"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/user/products").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/user/products/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/user/products/{id}/reviews").permitAll()
                         .anyRequest().authenticated()
                 )
+
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint) // Add custom entry point
                 )

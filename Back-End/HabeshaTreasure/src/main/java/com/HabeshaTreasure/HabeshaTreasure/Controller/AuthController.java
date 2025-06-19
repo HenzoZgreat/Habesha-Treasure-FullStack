@@ -1,6 +1,5 @@
 package com.HabeshaTreasure.HabeshaTreasure.Controller;
 
-import com.HabeshaTreasure.HabeshaTreasure.DTO.UserProjection;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.UserResponseDTO;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.User;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.UsersInfo;

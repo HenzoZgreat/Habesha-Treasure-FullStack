@@ -7,6 +7,7 @@ import com.HabeshaTreasure.HabeshaTreasure.Service.FavoriteProductService;
 import com.HabeshaTreasure.HabeshaTreasure.Service.ProductsService;
 import com.HabeshaTreasure.HabeshaTreasure.Service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -45,6 +46,20 @@ public class ProductsUserController {
 //===================================================================================
 
     // Favorites
+    @GetMapping("/favorites")
+    public ResponseEntity<?> getFavorites(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You must be logged in.");
+        }
+        return ResponseEntity.ok(favoriteService.getFavorites(user));
+    }
+
+    @GetMapping("/{id}/is-favorited")
+    public ResponseEntity<?> isFavorited(@PathVariable Integer id, @AuthenticationPrincipal User user) {
+        boolean isFav = favoriteService.isFavoritedBy(user, id);
+        return ResponseEntity.ok(Map.of("favorited", isFav));
+    }
+
     @PostMapping("/{id}/favorite")
     public ResponseEntity<?> favorite(@PathVariable Integer id, @AuthenticationPrincipal User user) {
         favoriteService.addToFavorites(user, id);
@@ -57,10 +72,7 @@ public class ProductsUserController {
         return ResponseEntity.ok("Unfavorited");
     }
 
-    @GetMapping("/favorites")
-    public ResponseEntity<List<Products>> getFavorites(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(favoriteService.getFavorites(user));
-    }
+
 
     // Reviews
     @GetMapping("/{id}/reviews")
@@ -88,10 +100,6 @@ public class ProductsUserController {
     }
 
 
-    @GetMapping("/{id}/is-favorited")
-    public ResponseEntity<?> isFavorited(@PathVariable Integer id, @AuthenticationPrincipal User user) {
-        boolean isFav = favoriteService.isFavoritedBy(user, id);
-        return ResponseEntity.ok(Map.of("favorited", isFav));
-    }
+
 
 }

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import HomeIcon from '@mui/icons-material/Home';
 import GoogleIcon from '@mui/icons-material/Google';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
 import { Link, useNavigate } from 'react-router-dom';
 import HabeshaLogo from '../assets/images/HabeshaLogo.jpeg';
 import api from '../componets/api/api';
@@ -12,6 +14,8 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [errEmail, setErrEmail] = useState("");
   const [errPassword, setErrPassword] = useState("");
+  const [notification, setNotification] = useState(null);
+  const [showAdminPrompt, setShowAdminPrompt] = useState(false);
 
   const navigate = useNavigate();
   const language = useSelector((state) => state.habesha.language);
@@ -36,6 +40,11 @@ const SignIn = () => {
       help: 'Help',
       footer: '2025, ReactBd, Inc. or its affiliates',
       returnToHome: 'Return to Home',
+      loginSuccess: 'Login successful!',
+      loginFailed: 'Login failed',
+      adminPrompt: 'Welcome, Admin! Where would you like to go?',
+      adminDashboard: 'Admin Dashboard',
+      userHome: 'User Home Page',
     },
     AMH: {
       signIn: 'ግባ',
@@ -56,6 +65,11 @@ const SignIn = () => {
       help: 'እገዛ',
       footer: '2025, ReactBd, Inc. ወይም ተባባሪዎቹ',
       returnToHome: 'ወደ መነሻ ገፅ ተመለስ',
+      loginSuccess: 'መግባት ተሳክቷል!',
+      loginFailed: 'መግባት አልተሳካም',
+      adminPrompt: 'እንኳን ደህና መጡ፣ አስተዳዳሪ! ወዴት መሄድ ይፈልጋሉ?',
+      adminDashboard: 'የአስተዳዳሪ መቆጣጠሪያ ሰሌዳ',
+      userHome: 'የተጠቃሚ መነሻ ገፅ',
     },
   };
 
@@ -75,7 +89,6 @@ const SignIn = () => {
     return String(email).toLowerCase().match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
   };
 
-  // ...existing code...
   const handleSignIn = async (e) => {
     e.preventDefault();
 
@@ -108,29 +121,94 @@ const SignIn = () => {
       // Store JWT token in localStorage
       localStorage.setItem('token', response.data.token);
 
-      alert(response.data.message || 'Login successful');
+      setNotification({ message: currentText.loginSuccess, type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+
       setEmail('');
       setPassword('');
 
-      // Redirect based on role
+      // Check user role and handle navigation
       if (response.data.Role === 'ADMIN') {
-        navigate('/admin');
+        setShowAdminPrompt(true);
       } else {
         navigate('/');
       }
     } catch (error) {
-      const msg = error.response?.data?.message || 'Login failed';
-      setErrEmail(msg);
+      const msg = error.response?.data?.message || currentText.loginFailed;
+      setNotification({ message: msg, type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
     }
   };
-// ...existing code...
 
   const handleGoogleSignIn = () => {
-    alert('Google Sign-In functionality will be implemented later.');
+    setNotification({ message: 'Google Sign-In functionality will be implemented later.', type: 'info' });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleAdminChoice = (destination) => {
+    setShowAdminPrompt(false);
+    navigate(destination);
   };
 
   return (
     <div lang={language === 'EN' ? 'en' : 'am'} className="w-full">
+      {/* Notification */}
+      {notification && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300">
+          <div className={`bg-white border-l-4 ${notification.type === 'success' ? 'border-green-500' : 'border-red-500'} shadow-2xl rounded-lg p-4 max-w-sm mx-auto`}>
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                {notification.type === 'success' ? (
+                  <CheckCircleIcon className="text-green-500 text-xl" />
+                ) : (
+                  <span className="text-red-500 text-xl">⚠</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-habesha_blue">{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <CloseIcon className="text-sm" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Prompt Modal */}
+      {showAdminPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-habesha_blue">{currentText.adminPrompt}</h2>
+              <button
+                onClick={() => setShowAdminPrompt(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <CloseIcon className="text-sm" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-4">
+              <button
+                onClick={() => handleAdminChoice('/admin')}
+                className="w-full py-2 bg-habesha_blue text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+              >
+                {currentText.adminDashboard}
+              </button>
+              <button
+                onClick={() => handleAdminChoice('/')}
+                className="w-full py-2 bg-habesha_yellow text-habesha_blue rounded-md hover:bg-yellow-500 transition-colors font-medium"
+              >
+                {currentText.userHome}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full bg-gray-100 pb-10">
         <form className="w-[350px] mx-auto flex flex-col items-center">
           {/* Return to Home Icon */}

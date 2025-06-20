@@ -57,5 +57,9 @@ public class CartService {
     public void clearCart(User user) {
         cartRepo.deleteByUser(user);
     }
+
+    public void deleteItemsByProduct(Products product) {
+        cartRepo.deleteByProduct(product);
+    }
 }
 

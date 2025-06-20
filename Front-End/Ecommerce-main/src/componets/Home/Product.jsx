@@ -29,7 +29,7 @@ const Product = () => {
       addToCart: 'Add to Cart',
       viewDetails: 'View Details',
       favorite: 'Favorite',
-      itemAdded: 'Item added to cart!',
+      itemAdded: 'success',
       addToCartFailed: 'Failed to add item to cart',
       failedToLoad: 'Failed to load products',
       retry: 'Retry',
@@ -38,7 +38,7 @@ const Product = () => {
       loginToAddToCart: 'Please sign in to add this item to cart.',
     },
     AMH: {
-      addToCart: 'ወᐇጋኪ ጨሥር',
+      addToCart: 'ወደ ጋሪ ጨምር',
       viewDetails: 'ዝርዝር ተመልከቱ',
       favorite: 'የምወደው',
       itemAdded: 'እቃ ወደ ጋሪ ታክሏል!',
@@ -46,7 +46,7 @@ const Product = () => {
       failedToLoad: 'ምርቶችን መጫን አልተሳካም',
       retry: 'እንደገና ሞክር',
       loading: 'ምርቶች በመጫን ላይ...',
-      loginToFavorite: 'ይህን እቃ ለመውደው እባክዎ ይግቡ።',
+      loginToFavorite: 'ይህን እቃ ለመውደድ እባክዎ ይግቡ።',
       loginToAddToCart: 'ይህን እቃ ወደ ጋሪ ለመጨመር እባክዎ ይግቡ።',
     },
   };
@@ -54,8 +54,12 @@ const Product = () => {
   const currentText = text[language];
   const USD_TO_ETB_RATE = 150;
 
-  const getDisplayPrice = (price) => {
-    return language === 'EN' ? price : price * USD_TO_ETB_RATE;
+  const formatPrice = (price) => {
+    const value = language === 'EN' ? price : price * USD_TO_ETB_RATE;
+    return value.toLocaleString(language === 'AMH' ? 'am-ET' : 'en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const fetchProducts = async () => {
@@ -238,7 +242,7 @@ const Product = () => {
               </h2>
               <p className="text-sm text-gray-600 font-semibold">
                 {language === 'EN' ? '$' : 'ETB '}
-                {getDisplayPrice(item.price)}
+                {formatPrice(item.price)}
               </p>
             </div>
             <div>

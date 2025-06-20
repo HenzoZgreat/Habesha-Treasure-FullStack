@@ -6,6 +6,7 @@ import com.HabeshaTreasure.HabeshaTreasure.Entity.Products;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.User;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.FavoriteProductRepo;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.ProductsRepo;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +40,7 @@ public class FavoriteProductService {
         }
     }
 
+    @Transactional
     public void removeFromFavorites(User user, Integer productId) {
         Products product = productsRepo.findById(productId)
                 .orElseThrow(() -> new NoSuchElementException("Product not found"));

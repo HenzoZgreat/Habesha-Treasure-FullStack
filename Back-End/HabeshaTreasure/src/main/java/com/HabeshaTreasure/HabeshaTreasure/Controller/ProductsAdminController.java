@@ -60,6 +60,8 @@ public class ProductsAdminController {
             return ResponseEntity.ok("Product deleted");
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Delete failed: " + e.getMessage());
         }
     }
 
@@ -70,6 +72,8 @@ public class ProductsAdminController {
             return ResponseEntity.ok("Products Deleted");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Bulk delete failed: " + e.getMessage());
         }
     }
 

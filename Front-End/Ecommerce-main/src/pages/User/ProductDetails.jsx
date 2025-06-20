@@ -11,9 +11,12 @@ import StarIcon from "@mui/icons-material/Star"
 import StarBorderIcon from "@mui/icons-material/StarBorder"
 import LocalShippingIcon from "@mui/icons-material/LocalShipping"
 import SecurityIcon from "@mui/icons-material/Security"
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import CloseIcon from "@mui/icons-material/Close"
 import { addToCart } from "../../redux/HabeshaSlice"
 import { v4 as uuidv4 } from "uuid"
 import userProductService from "../../service/userProductService"
+import CartService from "../../service/CartService"
 import ProductReviews from "../../componets/products/ProductReviews"
 
 const ProductDetails = () => {
@@ -28,6 +31,7 @@ const ProductDetails = () => {
   const [error, setError] = useState(null)
   const [isFavorite, setIsFavorite] = useState(false)
   const [quantity, setQuantity] = useState(1)
+  const [notification, setNotification] = useState(null)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -68,6 +72,9 @@ const ProductDetails = () => {
       share: "Share",
       relatedProducts: "Related Products",
       loginPrompt: "Please sign in to favorite this product.",
+      loginToAddToCart: "Please sign in to add this item to cart.",
+      itemAdded: "Item added to cart!",
+      addToCartFailed: "Failed to add item to cart",
     },
     AMH: {
       backToProducts: "ወደ ምርቶች ተመለስ",
@@ -82,42 +89,70 @@ const ProductDetails = () => {
       shipping: "ነፃ መላኪያ",
       shippingDesc: "ከ$50 በላይ በሆኑ ትዕዛዞች ላይ ነፃ መላኪያ",
       secure: "ደህንነቱ የተጠበቀ ክፍያ",
-      secureDesc: "100% ደህንነቱ የተጠበቀ የክፍያ ሂደት",
+      secureDesc: "100% ደህነቱ የተጠበቀ የክፍያ ሂደት",
       rating: "ደረጃ",
       reviews: "ግምገማዎች",
       share: "አጋራ",
       relatedProducts: "ተዛማጅ ምርቶች",
       loginPrompt: "ይህን ምርት ለመውደድ እባክዎ ይግቡ።",
+      loginToAddToCart: "ይህን እቃ ወደ ጋሪ ለመጨመር እባክዎ ይግቡ።",
+      itemAdded: "እቃ ወደ ጋሪ ታክሏል!",
+      addToCartFailed: "እቃ ወደ ጋሪ መጨመር አልተሳካም",
     },
   };
 
   const currentText = text[language];
   const USD_TO_ETB_RATE = 150;
 
-  const getDisplayPrice = (price) => {
-    return language === "EN" ? price : price * USD_TO_ETB_RATE;
+  const formatPrice = (price) => {
+    const value = language === "EN" ? price : price * USD_TO_ETB_RATE;
+    return value.toLocaleString(language === "AMH" ? 'am-ET' : 'en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
-  const handleAddToCart = () => {
+  const formatNumber = (number) => {
+    return number.toLocaleString(language === "AMH" ? 'am-ET' : 'en-US');
+  };
+
+  const handleAddToCart = async () => {
     if (!product) return;
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setNotification({ message: currentText.loginToAddToCart, type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
     const itemId = product.id ?? uuidv4();
-    dispatch(
-      addToCart({
-        id: itemId,
-        image: product.image,
-        title: product.name,
-        price: product.price,
-        description: language === "AMH" ? product.descriptionAm : product.descriptionEn,
-        category: product.category,
-        quantity: quantity,
-      })
-    );
+    const cartItem = {
+      id: itemId,
+      image: product.image,
+      title: product.name,
+      price: product.price,
+      description: language === "AMH" ? product.descriptionAm : product.descriptionEn,
+      category: product.category,
+      quantity: quantity,
+    };
+
+    try {
+      await CartService.addToCart({ productId: product.id, quantity: quantity });
+      dispatch(addToCart(cartItem));
+      setNotification({ message: currentText.itemAdded, type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      console.error('Failed to add to cart:', err);
+      setNotification({ message: currentText.addToCartFailed, type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
   const handleToggleFavorite = async () => {
     if (!localStorage.getItem('token')) {
-      alert(currentText.loginPrompt);
+      setNotification({ message: currentText.loginPrompt, type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
       return;
     }
     try {
@@ -130,7 +165,8 @@ const ProductDetails = () => {
       }
     } catch (err) {
       console.error("Failed to toggle favorite:", err);
-      alert(`Failed to update favorite: ${err.response?.data?.message || "Server error"}`);
+      setNotification({ message: `Failed to update favorite: ${err.response?.data?.message || "Server error"}`, type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
     }
   };
 
@@ -182,6 +218,32 @@ const ProductDetails = () => {
 
   return (
     <div lang={language === "EN" ? "en" : "am"} className="max-w-screen-2xl mx-auto px-4 py-8">
+      {/* Notification */}
+      {notification && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300">
+          <div className={`bg-white border-l-4 ${notification.type === 'success' ? 'border-green-500' : 'border-red-500'} shadow-2xl rounded-lg p-4 max-w-sm mx-auto`}>
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                {notification.type === 'success' ? (
+                  <CheckCircleIcon className="text-green-500 text-xl" />
+                ) : (
+                  <span className="text-red-500 text-xl">⚠</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-habesha_blue">{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <CloseIcon className="text-sm" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6">
         <button
@@ -227,10 +289,10 @@ const ProductDetails = () => {
             <div className="flex items-center gap-4 mb-6">
               <span className="text-3xl font-bold text-habesha_blue">
                 {language === "EN" ? "$" : "ETB "}
-                {getDisplayPrice(product.price)}
+                {formatPrice(product.price)}
               </span>
               {product.stock > 0 ? (
-                <label className="px-3 py-1 bg-green-100 text-white text-sm font-semibold rounded-full">{currentText.inStock} ({product.stock})</label>
+                <label className="px-3 py-1 bg-green-100 text-white text-sm font-semibold rounded-full">{currentText.inStock} ({formatNumber(product.stock)})</label>
               ) : (
                 <label className="px-3 py-1 bg-red-100 text-white text-sm font-semibold rounded-full">{currentText.outOfStock}</label>
               )}
@@ -256,7 +318,7 @@ const ProductDetails = () => {
               >
                 -
               </button>
-              <span className="px-4 py-2 border-x border-gray-300">{quantity}</span>
+              <span className="px-4 py-2 border-x border-gray-300">{formatNumber(quantity)}</span>
               <button
                 onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
                 className="px-3 py-2 hover:bg-gray-100 transition-colors"
@@ -333,7 +395,7 @@ const ProductDetails = () => {
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="font-medium">Stock:</span>
-                <span>{product.stock} units</span>
+                <span>{formatNumber(product.stock)} units</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="font-medium">Status:</span>
@@ -361,9 +423,10 @@ const ProductDetails = () => {
           <div className="bg-gray-50 rounded-lg p-6">
             <h4 className="font-semibold mb-3">Need Help?</h4>
             <p className="text-sm text-gray-600 mb-4">
-              Have questions about this product? Our customer service team is here to help.
+              Have questions about this product? Our customer support team is here to help.
             </p>
-            <button className="w-full bg-white border border-gray-300 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors">
+            <button
+              className="w-full bg-white border border-gray-300 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors">
               Contact Support
             </button>
           </div>

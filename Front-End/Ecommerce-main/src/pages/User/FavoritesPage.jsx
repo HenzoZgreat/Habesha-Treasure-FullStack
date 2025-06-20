@@ -61,6 +61,7 @@ const FavoritesPage = () => {
   }
 
   const currentText = text[language]
+  const USD_TO_ETB_RATE = 150
 
   useEffect(() => {
     fetchFavorites()
@@ -112,9 +113,18 @@ const FavoritesPage = () => {
     )
   }
 
+  const formatPrice = (price) => {
+    const value = language === "EN" ? price : price * USD_TO_ETB_RATE
+    return value.toLocaleString(language === "AMH" ? 'am-ET' : 'en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  }
+
   const renderStars = (rating) => {
     const stars = []
-    const fullStars = Math.floor(rating)
+    const formattedRating = Math.round(rating * 10) / 10
+    const fullStars = Math.floor(formattedRating)
     for (let i = 0; i < fullStars; i++) {
       stars.push(<StarIcon key={i} className="text-yellow-400 text-sm" />)
     }
@@ -122,7 +132,7 @@ const FavoritesPage = () => {
     for (let i = 0; i < emptyStars; i++) {
       stars.push(<StarBorderIcon key={`empty-${i}`} className="text-gray-300 text-sm" />)
     }
-    return stars
+    return { stars, formattedRating }
   }
 
   if (!localStorage.getItem("token")) {
@@ -218,75 +228,82 @@ const FavoritesPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {favorites.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
-              >
-                <div className="relative overflow-hidden">
-                  <img
-                    src={product.image || "/placeholder.svg"}
-                    alt={language === "AMH" ? product.name : product.name}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <button
-                    onClick={() => removeFromFavorites(product.id)}
-                    disabled={removingId === product.id}
-                    className="absolute top-3 right-3 bg-white/90 hover:bg-white text-red-500 p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-110 disabled:opacity-50"
-                  >
-                    {removingId === product.id ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
-                    ) : (
-                      <DeleteIcon className="text-sm" />
-                    )}
-                  </button>
+            {favorites.map((product) => {
+              const { stars, formattedRating } = renderStars(product.rate)
+              return (
+                <div
+                  key={product.id}
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                >
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={product.image || "/placeholder.svg"}
+                      alt={language === "AMH" ? product.name : product.name}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                      onClick={() => navigate(`/product/${product.id}`)}
+                    />
+                    <button
+                      onClick={() => removeFromFavorites(product.id)}
+                      disabled={removingId === product.id}
+                      className="absolute top-3 right-3 bg-white/90 hover:bg-white text-red-500 p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-110 disabled:opacity-50"
+                    >
+                      {removingId === product.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                      ) : (
+                        <DeleteIcon className="text-sm" />
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="mb-2">
+                      <span className="text-xs text-habesha_blue bg-blue-50 px-2 py-1 rounded-full">
+                        {product.category}
+                      </span>
+                    </div>
+
+                    <h3
+                      className="font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-habesha_blue transition-colors cursor-pointer"
+                      onClick={() => navigate(`/product/${product.id}`)}
+                    >
+                      {language === "AMH" ? product.name : product.name}
+                    </h3>
+
+                    <div className="flex items-center gap-1 mb-3">
+                      <div className="flex">{stars}</div>
+                      <span className="text-sm text-gray-600">
+                        {formattedRating} ({product.count} {currentText.reviews})
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-xl font-bold text-habesha_blue">
+                        {language === "EN" ? "$" : "ETB "}{formatPrice(product.price)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {product.stock > 0 ? (
+                        <button
+                          onClick={() => addToCartHandler(product)}
+                          className="w-full bg-habesha_yellow hover:bg-yellow-500 text-habesha_blue font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          <ShoppingCartIcon className="text-sm" />
+                          {currentText.addToCart}
+                        </button>
+                      ) : (
+                        <button
+                          disabled
+                          className="w-full bg-gray-200 text-gray-500 font-semibold py-3 px-4 rounded-lg cursor-not-allowed"
+                        >
+                          {currentText.outOfStock}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-
-                <div className="p-4">
-                  <div className="mb-2">
-                    <span className="text-xs text-habesha_blue bg-blue-50 px-2 py-1 rounded-full">
-                      {product.category}
-                    </span>
-                  </div>
-
-                  <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-habesha_blue transition-colors">
-                    {language === "AMH" ? product.name : product.name}
-                  </h3>
-
-                  <div className="flex items-center gap-1 mb-3">
-                    <div className="flex">{renderStars(product.rate)}</div>
-                    <span className="text-sm text-gray-600">
-                      {product.rate} ({product.count} {currentText.reviews})
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xl font-bold text-habesha_blue">
-                      {language === "EN" ? "$" : "ETB "}{language === "EN" ? product.price : product.price * 150}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    {product.stock > 0 ? (
-                      <button
-                        onClick={() => addToCartHandler(product)}
-                        className="w-full bg-habesha_yellow hover:bg-yellow-500 text-habesha_blue font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                      >
-                        <ShoppingCartIcon className="text-sm" />
-                        {currentText.addToCart}
-                      </button>
-                    ) : (
-                      <button
-                        disabled
-                        className="w-full bg-gray-200 text-gray-500 font-semibold py-3 px-4 rounded-lg cursor-not-allowed"
-                      >
-                        {currentText.outOfStock}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

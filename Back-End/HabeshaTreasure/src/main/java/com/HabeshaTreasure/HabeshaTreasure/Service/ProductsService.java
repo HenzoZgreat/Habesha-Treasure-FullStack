@@ -2,7 +2,9 @@ package com.HabeshaTreasure.HabeshaTreasure.Service;
 
 import com.HabeshaTreasure.HabeshaTreasure.DTO.ProductRequestDTO;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Products;
+import com.HabeshaTreasure.HabeshaTreasure.Repository.FavoriteProductRepo;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.ProductsRepo;
+import com.HabeshaTreasure.HabeshaTreasure.Repository.ReviewRepo;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,13 @@ public class ProductsService {
 
     @Autowired
     private ProductsRepo productsRepo;
+    @Autowired
+    private CartService cartService;
+    @Autowired
+    private FavoriteProductRepo favoriteRepo;
+    @Autowired
+    private ReviewRepo reviewRepo;
+
 
     public List<Products> getAllProducts() {
         return productsRepo.findAll();
@@ -49,10 +58,32 @@ public class ProductsService {
         productsRepo.save(product);
     }
 
-    
+
+    @Transactional
     public void deleteProduct(Integer id) {
         Products product = getProductById(id);
+
+        cartService.deleteItemsByProduct(product);
+        favoriteRepo.deleteByProduct(product);
+        reviewRepo.deleteByProduct(product);
+
         productsRepo.delete(product);
+    }
+
+    @Transactional
+    public void deleteMultipleProducts(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("Invalid product IDs");
+        }
+
+        List<Products> productsToDelete = productsRepo.findAllById(ids);
+        for (Products product : productsToDelete) {
+            cartService.deleteItemsByProduct(product);
+            favoriteRepo.deleteByProduct(product);
+            reviewRepo.deleteByProduct(product);
+        }
+
+        productsRepo.deleteAll(productsToDelete);
     }
 
     
@@ -113,30 +144,6 @@ public class ProductsService {
         p.setIsFeatured(dto.getIsFeatured() != null ? dto.getIsFeatured() : false);
         return p;
     }
-
-    @Transactional
-    public void deleteMultipleProducts(List<Integer> ids) {
-        if (ids == null || ids.isEmpty()) {
-            throw new IllegalArgumentException("Invalid product IDs");
-        }
-
-        List<Products> productsToDelete = productsRepo.findAllById(ids);
-
-        List<Integer> foundIds = productsToDelete.stream()
-                .map(Products::getId)
-                .toList();
-
-        List<Integer> missingIds = ids.stream()
-                .filter(id -> !foundIds.contains(id))
-                .toList();
-
-        if (!missingIds.isEmpty()) {
-            System.out.println("Missing product IDs: " + missingIds);
-        }
-
-        productsRepo.deleteAll(productsToDelete);
-    }
-
 
 }
 

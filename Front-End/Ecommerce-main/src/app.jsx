@@ -19,6 +19,7 @@ import ProductDetails from "./pages/User/ProductDetails"; // Assuming you have a
 import Favorites from "./pages/User/FavoritesPage"; // Assuming you have a Favorites page
 import UserProfile from "./pages/User/ProfilePage"; // Assuming you have a Profile page
 import OrdersPage from "./pages/User/OrdersPage";
+import CheckoutPage from "./pages/User/CheckoutPage";
 
 // Import the Admin Layout
 import AdminDashboardLayout from "./layout/AdminDashboardLayout"; // Assuming this is your layout file
@@ -59,6 +60,7 @@ function App() {
           <Route path="/favorites" element={<Favorites />}></Route>
           <Route path="/profile" element={<UserProfile />}></Route> {/* User Profile page */}
           <Route path="/orders" element={<OrdersPage />}></Route> {/* User Orders page */}
+          <Route path="/checkout" element={<CheckoutPage />}></Route> {/* Checkout page */}
           
           {/* Default route for the root path */}
           {/* Add other public routes here if they share the Header/Footer Layout */}
@@ -93,7 +95,7 @@ function App() {
     )
   );
   return (
-    <div className="font-bodyFont bg-gray-100"> {/* This bg-gray-100 might conflict with layout's bg */}
+    <div className="font-bodyFont bg-gray-100">
       <RouterProvider router={router}></RouterProvider>
     </div>
   );

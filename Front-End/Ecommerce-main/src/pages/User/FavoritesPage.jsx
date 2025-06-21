@@ -11,7 +11,10 @@ import StarBorderIcon from "@mui/icons-material/StarBorder"
 import DeleteIcon from "@mui/icons-material/Delete"
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import CloseIcon from "@mui/icons-material/Close"
 import userProductService from "../../service/userProductService"
+import CartService from "../../service/CartService"
 import { addToCart } from "../../redux/HabeshaSlice"
 
 const FavoritesPage = () => {
@@ -19,6 +22,7 @@ const FavoritesPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [removingId, setRemovingId] = useState(null)
+  const [notification, setNotification] = useState(null)
   const language = useSelector((state) => state.habesha.language)
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -40,6 +44,9 @@ const FavoritesPage = () => {
       backToProducts: "Back to Products",
       notLoggedIn: "Please sign in to view your favorites",
       signIn: "Sign In",
+      itemAdded: "Item added to cart!",
+      addToCartFailed: "Failed to add item to cart",
+      loginToAddToCart: "Please sign in to add this item to cart.",
     },
     AMH: {
       title: "የእርስዎ ተወዳጆች",
@@ -57,6 +64,9 @@ const FavoritesPage = () => {
       backToProducts: "ወደ ምርቶች ተመለስ",
       notLoggedIn: "ተወዳጆችዎን ለማየት እባክዎ ይግቡ",
       signIn: "ይግቡ",
+      itemAdded: "እቃ ወደ ጋሪ ታክሏል!",
+      addToCartFailed: "እቃ ወደ ጋሪ መጨመር አልተሳካም",
+      loginToAddToCart: "ይህን እቃ ወደ ጋሪ ለመጨመር እባክዎ ይግቡ።",
     },
   }
 
@@ -99,18 +109,34 @@ const FavoritesPage = () => {
     }
   }
 
-  const addToCartHandler = (product) => {
-    dispatch(
-      addToCart({
-        id: product.id,
-        image: product.image,
-        title: product.name,
-        price: product.price,
-        description: language === "AMH" ? product.descriptionAm : product.descriptionEn,
-        category: product.category,
-        quantity: 1,
-      })
-    )
+  const addToCartHandler = async (product) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setNotification({ message: currentText.loginToAddToCart, type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    const cartItem = {
+      id: product.id,
+      image: product.image,
+      title: product.name,
+      price: product.price,
+      description: language === "AMH" ? product.descriptionAm : product.descriptionEn,
+      category: product.category,
+      quantity: 1,
+    };
+
+    try {
+      await CartService.addToCart({ productId: product.id, quantity: 1 });
+      dispatch(addToCart(cartItem));
+      setNotification({ message: currentText.itemAdded, type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      console.error('Failed to add to cart:', err);
+      setNotification({ message: currentText.addToCartFailed, type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
+    }
   }
 
   const formatPrice = (price) => {
@@ -126,35 +152,35 @@ const FavoritesPage = () => {
     const formattedRating = Math.round(rating * 10) / 10
     const fullStars = Math.floor(formattedRating)
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<StarIcon key={i} className="text-yellow-400 text-sm" />)
+      stars.push(<StarIcon key={i} className="text-yellow-400 text-xs sm:text-sm" />)
     }
     const emptyStars = 5 - fullStars
     for (let i = 0; i < emptyStars; i++) {
-      stars.push(<StarBorderIcon key={`empty-${i}`} className="text-gray-300 text-sm" />)
+      stars.push(<StarBorderIcon key={`empty-${i}`} className="text-gray-300 text-xs sm:text-sm" />)
     }
     return { stars, formattedRating }
   }
 
   if (!localStorage.getItem("token")) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="bg-white rounded-full p-6 w-24 h-24 mx-auto mb-6 shadow-lg flex items-center justify-center">
-            <FavoriteBorderIcon className="text-gray-400 text-4xl" />
+          <div className="bg-white rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg flex items-center justify-center">
+            <FavoriteBorderIcon className="text-gray-400 text-2xl" />
           </div>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">{currentText.notLoggedIn}</h2>
-          <div className="flex gap-4 justify-center">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">{currentText.notLoggedIn}</h2>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center">
             <button
               onClick={() => navigate("/SignIn")}
-              className="bg-habesha_blue text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="bg-habesha_blue text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm sm:text-base"
             >
               {currentText.signIn}
             </button>
             <button
               onClick={() => navigate("/")}
-              className="bg-habesha_yellow text-habesha_blue px-8 py-3 rounded-lg hover:bg-yellow-500 transition-colors font-medium flex items-center gap-2"
+              className="bg-habesha_yellow text-habesha_blue px-6 py-2 rounded-lg hover:bg-yellow-500 transition-colors font-medium flex items-center justify-center gap-2 text-sm sm:text-base"
             >
-              <ShoppingBagIcon />
+              <ShoppingBagIcon className="text-sm" />
               {currentText.backToProducts}
             </button>
           </div>
@@ -165,10 +191,10 @@ const FavoritesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-habesha_blue mx-auto mb-4"></div>
-          <p className="text-habesha_blue font-medium">{currentText.loading}</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-habesha_blue mx-auto mb-4"></div>
+          <p className="text-habesha_blue font-medium text-sm sm:text-base">{currentText.loading}</p>
         </div>
       </div>
     )
@@ -176,15 +202,15 @@ const FavoritesPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="bg-red-100 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <span className="text-red-600 text-2xl">⚠</span>
+          <div className="bg-red-100 rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+            <span className="text-red-600 text-lg">⚠</span>
           </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">{error}</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">{error}</h2>
           <button
             onClick={fetchFavorites}
-            className="bg-habesha_blue text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-habesha_blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
             {currentText.retry}
           </button>
@@ -194,68 +220,92 @@ const FavoritesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
+    <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8">
+      {notification && (
+        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300 w-[90%] sm:w-auto">
+          <div className={`bg-white border-l-4 ${notification.type === 'success' ? 'border-green-500' : 'border-red-500'} shadow-2xl rounded-lg p-3 sm:p-4 max-w-sm mx-auto`}>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex-shrink-0">
+                {notification.type === 'success' ? (
+                  <CheckCircleIcon className="text-green-500 text-lg sm:text-xl" />
+                ) : (
+                  <span className="text-red-500 text-lg sm:text-xl">⚠</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-xs sm:text-sm font-medium text-habesha_blue">{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <CloseIcon className="text-xs sm:text-sm" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6 sm:mb-8">
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-2 text-habesha_blue hover:text-blue-700 transition-colors mb-4"
+            className="flex items-center gap-2 text-habesha_blue hover:text-blue-700 transition-colors mb-2 sm:mb-4 text-sm sm:text-base"
           >
-            <ArrowBackIcon className="text-sm" />
+            <ArrowBackIcon className="text-xs sm:text-sm" />
             {currentText.backToProducts}
           </button>
-          <div className="flex items-center gap-3 mb-2">
-            <FavoriteIcon className="text-habesha_yellow text-3xl" />
-            <h1 className="text-3xl font-bold text-habesha_blue">{currentText.title}</h1>
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <FavoriteIcon className="text-habesha_yellow text-xl sm:text-2xl" />
+            <h1 className="text-xl sm:text-2xl font-bold text-habesha_blue">{currentText.title}</h1>
           </div>
-          <p className="text-gray-600">{currentText.subtitle}</p>
+          <p className="text-gray-600 text-xs sm:text-sm">{currentText.subtitle}</p>
         </div>
 
         {favorites.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="bg-white rounded-full p-6 w-24 h-24 mx-auto mb-6 shadow-lg flex items-center justify-center">
-              <FavoriteBorderIcon className="text-gray-400 text-4xl" />
+          <div className="text-center py-10 sm:py-16">
+            <div className="bg-white rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg flex items-center justify-center">
+              <FavoriteBorderIcon className="text-gray-400 text-2xl" />
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">{currentText.empty}</h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">{currentText.emptyDesc}</p>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">{currentText.empty}</h2>
+            <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 max-w-xs mx-auto">{currentText.emptyDesc}</p>
             <button
               onClick={() => navigate("/")}
-              className="bg-habesha_blue text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 mx-auto"
+              className="bg-habesha_blue text-white px-6 py-2 sm:px-8 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 mx-auto text-sm sm:text-base"
             >
-              <ShoppingBagIcon />
+              <ShoppingBagIcon className="text-sm" />
               {currentText.continueShopping}
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="space-y-4">
             {favorites.map((product) => {
               const { stars, formattedRating } = renderStars(product.rate)
               return (
                 <div
                   key={product.id}
-                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                  className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex items-start w-full"
                 >
-                  <div className="relative overflow-hidden">
+                  <div className="relative w-28 sm:w-40 flex-shrink-0">
                     <img
                       src={product.image || "/placeholder.svg"}
                       alt={language === "AMH" ? product.name : product.name}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                      className="w-full h-28 sm:h-40 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                       onClick={() => navigate(`/product/${product.id}`)}
                     />
                     <button
                       onClick={() => removeFromFavorites(product.id)}
                       disabled={removingId === product.id}
-                      className="absolute top-3 right-3 bg-white/90 hover:bg-white text-red-500 p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-110 disabled:opacity-50"
+                      className="absolute top-2 right-2 bg-white/90 hover:bg-white text-red-500 p-1.5 sm:p-2 rounded-full shadow-sm transition-all duration-200 hover:scale-110 disabled:opacity-50"
                     >
                       {removingId === product.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-red-500"></div>
                       ) : (
-                        <DeleteIcon className="text-sm" />
+                        <DeleteIcon className="text-xs sm:text-sm" />
                       )}
                     </button>
                   </div>
 
-                  <div className="p-4">
+                  <div className="p-3 sm:p-4 flex-grow">
                     <div className="mb-2">
                       <span className="text-xs text-habesha_blue bg-blue-50 px-2 py-1 rounded-full">
                         {product.category}
@@ -263,38 +313,38 @@ const FavoritesPage = () => {
                     </div>
 
                     <h3
-                      className="font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-habesha_blue transition-colors cursor-pointer"
+                      className="font-semibold text-sm sm:text-base text-gray-800 mb-2 line-clamp-2 hover:text-habesha_blue transition-colors cursor-pointer"
                       onClick={() => navigate(`/product/${product.id}`)}
                     >
                       {language === "AMH" ? product.name : product.name}
                     </h3>
 
-                    <div className="flex items-center gap-1 mb-3">
+                    <div className="flex items-center gap-1 mb-2 sm:mb-3">
                       <div className="flex">{stars}</div>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-xs sm:text-sm text-gray-600">
                         {formattedRating} ({product.count} {currentText.reviews})
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-xl font-bold text-habesha_blue">
+                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                      <span className="text-base sm:text-lg font-bold text-habesha_blue">
                         {language === "EN" ? "$" : "ETB "}{formatPrice(product.price)}
                       </span>
                     </div>
 
-                    <div className="space-y-2">
+                    <div>
                       {product.stock > 0 ? (
                         <button
                           onClick={() => addToCartHandler(product)}
-                          className="w-full bg-habesha_yellow hover:bg-yellow-500 text-habesha_blue font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                          className="w-full bg-habesha_yellow hover:bg-yellow-500 text-habesha_blue font-semibold py-2 sm:py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                         >
-                          <ShoppingCartIcon className="text-sm" />
+                          <ShoppingCartIcon className="text-xs sm:text-sm" />
                           {currentText.addToCart}
                         </button>
                       ) : (
                         <button
                           disabled
-                          className="w-full bg-gray-200 text-gray-500 font-semibold py-3 px-4 rounded-lg cursor-not-allowed"
+                          className="w-full bg-gray-200 text-gray-500 font-semibold py-2 sm:py-3 px-4 rounded-lg cursor-not-allowed text-sm sm:text-base"
                         >
                           {currentText.outOfStock}
                         </button>

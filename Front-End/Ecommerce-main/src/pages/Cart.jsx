@@ -69,7 +69,11 @@ const Cart = () => {
 
   const getDisplayPrice = useCallback(
     (price) => {
-      return language === 'EN' ? price : price * USD_TO_ETB_RATE;
+      const value = language === 'EN' ? price : price * USD_TO_ETB_RATE;
+      return value.toLocaleString(language === 'AMH' ? 'am-ET' : 'en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
     },
     [language]
   );
@@ -108,7 +112,7 @@ const Cart = () => {
     products.forEach((item) => {
       Total += item.price * item.quantity;
     });
-    setTotalPrice(getDisplayPrice(Total).toFixed(2));
+    setTotalPrice(getDisplayPrice(Total));
   }, [products, getDisplayPrice]);
 
   const handleDeleteItem = async (productId) => {
@@ -148,6 +152,10 @@ const Cart = () => {
       setNotification({ message: 'Failed to update quantity', type: 'error' });
       setTimeout(() => setNotification(null), 3000);
     }
+  };
+
+  const handleCheckout = () => {
+    navigate('/checkout');
   };
 
   if (!localStorage.getItem('token')) {
@@ -259,14 +267,14 @@ const Cart = () => {
                         {currentText.unitPrice}{' '}
                         <span className="font-semibold">
                           {language === 'EN' ? '$' : 'ETB '}
-                          {getDisplayPrice(item.price).toFixed(2)}
+                          {getDisplayPrice(item.price)}
                         </span>
                       </p>
                       <p className="text-xs sm:text-sm font-semibold mt-1">
                         {currentText.total}{' '}
                         <span className="text-habesha_blue">
                           {language === 'EN' ? '$' : 'ETB '}
-                          {getDisplayPrice(item.price * item.quantity).toFixed(2)}
+                          {getDisplayPrice(item.price * item.quantity)}
                         </span>
                       </p>
                     </div>
@@ -320,6 +328,7 @@ const Cart = () => {
               </span>
             </p>
             <button
+              onClick={handleCheckout}
               className="w-full bg-habesha_yellow hover:bg-yellow-500 text-habesha_blue font-semibold py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base"
             >
               {currentText.proceedToPay}

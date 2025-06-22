@@ -1,4 +1,4 @@
-"use client"
+"use filters"
 
 import SearchIcon from "@mui/icons-material/Search"
 import FilterListIcon from "@mui/icons-material/FilterList"
@@ -7,45 +7,45 @@ import SortIcon from "@mui/icons-material/Sort"
 const OrdersFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatus, sortBy, setSortBy, language }) => {
   const text = {
     EN: {
-      searchPlaceholder: "Search your orders...",
-      filterAll: "All Orders",
-      filterProcessing: "Processing",
-      filterShipped: "Shipped",
-      filterDelivered: "Delivered",
-      filterCancelled: "Cancelled",
-      sortNewest: "Newest First",
-      sortOldest: "Oldest First",
-      sortHighest: "Highest Amount",
-      sortLowest: "Lowest Amount",
+      search_placeholder: "Search your orders...",
+      filter_all: "All Orders",
+      filter_processing: "Processing",
+      filter_shipped: "Shipped",
+      filter_delivered: "Delivered",
+      filter_cancelled: "Cancelled",
+      sort_newest: "Newest First",
+      sort_oldest: "Oldest First",
+      sort_highest: "Highest Amount",
+      sort_lowest: "Lowest Amount",
     },
     AMH: {
-      searchPlaceholder: "ትዕዛዞችዎን ይፈልጉ...",
-      filterAll: "ሁሉም ትዕዛዞች",
-      filterProcessing: "በሂደት ላይ",
-      filterShipped: "ተልኳል",
-      filterDelivered: "ተደርሷል",
-      filterCancelled: "ተሰርዟል",
-      sortNewest: "አዲስ መጀመሪያ",
-      sortOldest: "አሮጌ መጀመሪያ",
-      sortHighest: "ከፍተኛ መጠን",
-      sortLowest: "ዝቅተኛ መጠን",
+      search_placeholder: "ትዕዛዞን ፈልግ",
+      filter_all: "ሁሉም ትዕዛዞች",
+      filter_processing: "በሂደት ላይ",
+      filter_shipped: "ተልኳል",
+      filter_delivered: "ተደርሷል",
+      filter_cancelled: "ሰርዟል",
+      sort_newest: "አዲስ መጀመሪያ",
+      sort_oldest: "አሮጌ መጀመሪያ",
+      sort_highest: "ከፍተኛ መጠን",
+      sort_lowest: "ዝቅተኛ መጠን",
     },
   }
 
   const currentText = text[language]
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 animate-in slide-in-from-top duration-500 delay-200 border border-habesha_blue/20">
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 animate-in">
       <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
         {/* Search */}
         <div className="relative flex-1 max-w-md">
-          <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <SearchIcon className="text-gray-400" />
           <input
             type="text"
-            placeholder={currentText.searchPlaceholder}
+            placeholder={currentText.search_placeholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-habesha_blue focus:border-transparent transition-all duration-300 bg-white/50"
+            className="w-full pl-12 pr-2 py-3 border rounded-xl focus:ring-2 focus:ring-habesha_blue focus:border-transparent transition-all duration-300 bg-white/50"
           />
         </div>
 
@@ -58,11 +58,11 @@ const OrdersFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatu
               onChange={(e) => setFilterStatus(e.target.value)}
               className="border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-habesha_blue focus:border-transparent transition-all duration-300 bg-white/50"
             >
-              <option value="all">{currentText.filterAll}</option>
-              <option value="processing">{currentText.filterProcessing}</option>
-              <option value="shipped">{currentText.filterShipped}</option>
-              <option value="delivered">{currentText.filterDelivered}</option>
-              <option value="cancelled">{currentText.filterCancelled}</option>
+              <option value="all">{currentText.filter_all}</option>
+              <option value="processing">{currentText.filter_processing}</option>
+              <option value="shipped">{currentText.filter_shipped}</option>
+              <option value="delivered">{currentText.filter_delivered}</option>
+              <option value="cancelled">{currentText.filter_cancelled}</option>
             </select>
           </div>
 
@@ -73,10 +73,10 @@ const OrdersFilters = ({ searchTerm, setSearchTerm, filterStatus, setFilterStatu
               onChange={(e) => setSortBy(e.target.value)}
               className="border-2 border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-habesha_blue focus:border-transparent transition-all duration-300 bg-white/50"
             >
-              <option value="newest">{currentText.sortNewest}</option>
-              <option value="oldest">{currentText.sortOldest}</option>
-              <option value="highest">{currentText.sortHighest}</option>
-              <option value="lowest">{currentText.sortLowest}</option>
+              <option value="newest">{currentText.sort_newest}</option>
+              <option value="oldest">{currentText.sort_oldest}</option>
+              <option value="highest">{currentText.sort_highest}</option>
+              <option value="lowest">{currentText.sort_lowest}</option>
             </select>
           </div>
         </div>

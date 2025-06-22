@@ -9,10 +9,12 @@ import OrdersHeader from "../../componets/orders/UserOrders/OrdersHeader"
 import OrdersFilters from "../../componets/orders/UserOrders/OrdersFilters"
 import EmptyState from "../../componets/orders/UserOrders/EmptyState"
 import LoadingState from "../../componets/orders/UserOrders/LoadingState"
+import userOrderService from "../../service/userOrderService"
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [filterStatus, setFilterStatus] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
@@ -20,94 +22,28 @@ const OrdersPage = () => {
   const language = useSelector((state) => state.habesha.language)
   const navigate = useNavigate()
 
-  // Simplified demo orders data
-  const demoOrders = [
-    {
-      id: "ORD-001",
-      date: "2024-01-15",
-      status: "delivered",
-      total: 89.99,
-      itemCount: 3,
-      items: [
-        {
-          id: 1,
-          name: { EN: "Traditional Ethiopian Coffee", AMH: "ባህላዊ የኢትዮጵያ ቡና" },
-          image: "/placeholder.svg?height=80&width=80",
-          quantity: 2,
-          price: 24.99,
-        },
-        {
-          id: 2,
-          name: { EN: "Berbere Spice Blend", AMH: "በርበሬ ቅመም ድብልቅ" },
-          image: "/placeholder.svg?height=80&width=80",
-          quantity: 1,
-          price: 12.99,
-        },
-        {
-          id: 3,
-          name: { EN: "Ethiopian Honey", AMH: "የኢትዮጵያ ማር" },
-          image: "/placeholder.svg?height=80&width=80",
-          quantity: 2,
-          price: 18.5,
-        },
-      ],
-    },
-    {
-      id: "ORD-002",
-      date: "2024-01-10",
-      status: "shipped",
-      total: 156.5,
-      itemCount: 2,
-      items: [
-        {
-          id: 4,
-          name: { EN: "Handwoven Ethiopian Scarf", AMH: "በእጅ የተሸመነ የኢትዮጵያ ሻርፍ" },
-          image: "/placeholder.svg?height=80&width=80",
-          quantity: 1,
-          price: 45.0,
-        },
-        {
-          id: 5,
-          name: { EN: "Ethiopian Traditional Dress", AMH: "የኢትዮጵያ ባህላዊ ልብስ" },
-          image: "/placeholder.svg?height=80&width=80",
-          quantity: 1,
-          price: 111.5,
-        },
-      ],
-    },
-    {
-      id: "ORD-003",
-      date: "2024-01-05",
-      status: "processing",
-      total: 67.25,
-      itemCount: 1,
-      items: [
-        {
-          id: 6,
-          name: { EN: "Ethiopian Art Print", AMH: "የኢትዮጵያ ጥበብ ህትመት" },
-          image: "/placeholder.svg?height=80&width=80",
-          quantity: 1,
-          price: 67.25,
-        },
-      ],
-    },
-    {
-      id: "ORD-004",
-      date: "2023-12-20",
-      status: "cancelled",
-      total: 34.99,
-      itemCount: 1,
-      items: [
-        {
-          id: 7,
-          name: { EN: "Ethiopian Coffee Mug", AMH: "የኢትዮጵያ ቡና ኩባያ" },
-          image: "/placeholder.svg?height=80&width=80",
-          quantity: 1,
-          price: 34.99,
-        },
-      ],
-    },
-  ]
+  const USD_TO_ETB_RATE = 150
+
+  const formatPrice = (value) => {
+    const price = language === 'EN' ? value : value * USD_TO_ETB_RATE
+    return price.toLocaleString(language === 'AMH' ? 'am-ET' : 'en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  }
+
+  const formatNumber = (value) => {
+    return value.toLocaleString(language === 'AMH' ? 'am-ET' : 'en-US')
+  }
+
+  const statusMap = {
+    PENDING_PAYMENT: "processing",
+    PAID: "processing",
+    REJECTED: "cancelled",
+    CANCELLED: "cancelled",
+    SHIPPED: "shipped",
+    DELIVERED: "delivered",
+  }
 
   useEffect(() => {
     fetchOrders()
@@ -116,6 +52,7 @@ const OrdersPage = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true)
+      setError(null)
       const token = localStorage.getItem("token")
 
       if (!token) {
@@ -123,13 +60,26 @@ const OrdersPage = () => {
         return
       }
 
-      // Simulate API call
-      setTimeout(() => {
-        setOrders(demoOrders)
-        setLoading(false)
-      }, 1000)
+      const response = await userOrderService.getOrders()
+      const normalizedOrders = response.data.map((order) => ({
+        id: order.orderId,
+        date: order.orderedAt,
+        status: statusMap[order.status] || "processing",
+        total: order.totalPrice,
+        itemCount: order.items.length,
+        items: order.items.map((item, index) => ({
+          id: index + 1,
+          name: { EN: item.name, AMH: item.name },
+          image: item.image || "/placeholder.svg",
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      }))
+      setOrders(normalizedOrders)
     } catch (error) {
+      setError(error.message || "Failed to fetch orders")
       console.error("Error fetching orders:", error)
+    } finally {
       setLoading(false)
     }
   }
@@ -142,7 +92,7 @@ const OrdersPage = () => {
     .filter((order) => {
       if (!searchTerm) return true
       return (
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.items.some((item) => item.name[language].toLowerCase().includes(searchTerm.toLowerCase()))
       )
     })
@@ -166,7 +116,7 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <OrdersHeader language={language} />
 
@@ -180,6 +130,12 @@ const OrdersPage = () => {
           language={language}
         />
 
+        {error && (
+          <div className="bg-red-100 text-red-600 p-4 rounded-xl mb-6 text-center">
+            {error}
+          </div>
+        )}
+
         {filteredOrders.length === 0 ? (
           <EmptyState language={language} navigate={navigate} />
         ) : (
@@ -191,13 +147,22 @@ const OrdersPage = () => {
                 language={language}
                 onViewDetails={() => setSelectedOrder(order)}
                 index={index}
+                onCancel={() => fetchOrders()}
+                formatPrice={formatPrice}
+                formatNumber={formatNumber}
               />
             ))}
           </div>
         )}
 
         {selectedOrder && (
-          <OrderModal order={selectedOrder} language={language} onClose={() => setSelectedOrder(null)} />
+          <OrderModal
+            order={selectedOrder}
+            language={language}
+            onClose={() => setSelectedOrder(null)}
+            formatPrice={formatPrice}
+            formatNumber={formatNumber}
+          />
         )}
       </div>
     </div>

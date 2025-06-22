@@ -2,47 +2,49 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
+import { resetCart } from "../../redux/HabeshaSlice"
 import CheckoutSummary from "../../componets/CheckOut/CheckoutSummary"
 import PaymentInstructions from "../../componets/CheckOut/PaymentInstructions"
 import ReceiptUpload from "../../componets/CheckOut/ReceiptUpload"
 import OrderSuccess from "../../componets/CheckOut/OrderSuccess"
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"
 import SecurityIcon from "@mui/icons-material/Security"
+import userOrderService from "../../service/userOrderService"
 
 const CheckoutPage = () => {
   const [currentStep, setCurrentStep] = useState(1)
   const [uploadedReceipt, setUploadedReceipt] = useState(null)
   const [orderSubmitted, setOrderSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [orderId, setOrderId] = useState(null)
+  const [orderDetails, setOrderDetails] = useState(null)
   const language = useSelector((state) => state.habesha.language)
   const cartProducts = useSelector((state) => state.habesha.cartProducts)
   const navigate = useNavigate()
+  const dispatch = useDispatch()
 
-  // Demo cart data (replace with actual cart)
-  const demoCartItems = [
-    {
-      id: 1,
-      name: { EN: "Traditional Ethiopian Coffee", AMH: "ባህላዊ የኢትዮጵያ ቡና" },
-      image: "/placeholder.svg?height=80&width=80",
-      quantity: 2,
-      price: 24.99,
-    },
-    {
-      id: 2,
-      name: { EN: "Berbere Spice Blend", AMH: "በርበሬ ቅመም ድብልቅ" },
-      image: "/placeholder.svg?height=80&width=80",
-      quantity: 1,
-      price: 12.99,
-    },
-  ]
+  const USD_TO_ETB_RATE = 150
 
-  const cartItems = cartProducts.length > 0 ? cartProducts : demoCartItems
+  const formatPrice = (value) => {
+    const price = language === 'EN' ? value : value * USD_TO_ETB_RATE
+    return price.toLocaleString(language === 'AMH' ? 'am-ET' : 'en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  }
+
+  const cartItems = cartProducts.length > 0 ? cartProducts.map(item => ({
+    ...item,
+    name: typeof item.title === 'string' ? { [language]: item.title } : item.title,
+    price: item.price
+  })) : []
+
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const shipping = 5.99
   const total = subtotal + shipping
 
-  // Bank account details (this would come from your backend)
   const bankDetails = {
     accountNumber: "1000-2345-6789-0123",
     bankName: "Commercial Bank of Ethiopia",
@@ -62,6 +64,9 @@ const CheckoutPage = () => {
       submitOrder: "Submit Order",
       backToCart: "Back to Cart",
       orderSubmitted: "Order Submitted Successfully!",
+      reviewOrder: "Review Your Order",
+      cartEmpty: "Your cart is empty",
+      pleaseUpload: "Please upload your payment receipt to continue",
     },
     AMH: {
       title: "ክፍያ",
@@ -74,26 +79,56 @@ const CheckoutPage = () => {
       submitOrder: "ትዕዛዝ ይላኩ",
       backToCart: "ወደ ጋሪ ይመለሱ",
       orderSubmitted: "ትዕዛዝ በተሳካ ሁኔታ ተልኳል!",
+      reviewOrder: "ትዕዛዝዎን ይገምግሙ",
+      cartEmpty: "ጋሪዎ ባዶ ነው",
+      pleaseUpload: "ለመቀጠል የክፍያ ደረሰኝዎን ይላኩ",
     },
   }
 
   const currentText = text[language]
 
-  const handleNextStep = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1)
+  const handleNextStep = async () => {
+    if (currentStep === 1) {
+      if (cartItems.length === 0) {
+        setError(currentText.cartEmpty)
+        return
+      }
+      try {
+        setLoading(true)
+        const createResponse = await userOrderService.createOrder()
+        if (createResponse.data.orderId) {
+          setOrderId(createResponse.data.orderId)
+          const orderResponse = await userOrderService.getOrderById(createResponse.data.orderId)
+          setOrderDetails(orderResponse.data)
+          dispatch(resetCart())
+          setCurrentStep(2) // Move to Payment Instructions
+          setError(null)
+        }
+      } catch (err) {
+        setError(err.message || currentText.cartEmpty)
+      } finally {
+        setLoading(false)
+      }
+    } else if (currentStep === 2) {
+      setCurrentStep(3) // Move to Upload Receipt
     }
   }
 
   const handleSubmitOrder = async () => {
-    if (!uploadedReceipt) return
+    if (!uploadedReceipt || !orderId) {
+      setError(currentText.pleaseUpload)
+      return
+    }
 
     setLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setOrderSubmitted(true)
+    try {
+      await userOrderService.uploadProof(orderId, uploadedReceipt)
+      setOrderSubmitted(true) // Move to Order Success
+    } catch (err) {
+      setError(err.message || 'Failed to submit order')
+    } finally {
       setLoading(false)
-    }, 2000)
+    }
   }
 
   if (orderSubmitted) {
@@ -101,16 +136,16 @@ const CheckoutPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8 animate-in slide-in-from-top duration-700">
           <div className="flex items-center gap-4 mb-4">
-            <div className="bg-gradient-to-r from-habesha_blue to-blue-400 p-3 rounded-2xl shadow-lg">
+            <div className="bg-habesha_blue p-3 rounded-2xl shadow-lg">
               <ShoppingCartIcon className="text-white text-3xl" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-habesha_blue to-blue-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold text-habesha_blue">
                 {currentText.title}
               </h1>
               <p className="text-gray-600 text-lg">{currentText.subtitle}</p>
@@ -132,7 +167,7 @@ const CheckoutPage = () => {
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-300 ${
                     step <= currentStep
-                      ? "bg-gradient-to-r from-habesha_blue to-blue-400 text-white"
+                      ? "bg-habesha_blue text-white"
                       : "bg-gray-200 text-gray-500"
                   }`}
                 >
@@ -144,7 +179,7 @@ const CheckoutPage = () => {
                 {step < 3 && (
                   <div
                     className={`w-16 h-1 mx-4 rounded transition-all duration-300 ${
-                      step < currentStep ? "bg-gradient-to-r from-habesha_blue to-blue-400" : "bg-gray-200"
+                      step < currentStep ? "bg-habesha_blue" : "bg-gray-200"
                     }`}
                   />
                 )}
@@ -153,16 +188,27 @@ const CheckoutPage = () => {
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 text-red-600 p-4 rounded-xl mb-6 text-center">
+            {error}
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Order Summary */}
           <div className="lg:col-span-1">
             <CheckoutSummary
-              cartItems={cartItems}
-              subtotal={subtotal}
+              cartItems={currentStep === 1 ? cartItems : (orderDetails?.items || []).map(item => ({
+                ...item,
+                name: { [language]: item.name },
+              }))}
+              subtotal={currentStep === 1 ? subtotal : (orderDetails?.totalPrice || 0) - shipping}
               shipping={shipping}
-              total={total}
+              total={currentStep === 1 ? total : (orderDetails?.totalPrice || 0)}
               language={language}
+              formatPrice={formatPrice}
             />
           </div>
 
@@ -170,25 +216,29 @@ const CheckoutPage = () => {
           <div className="lg:col-span-2">
             {currentStep === 1 && (
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-habesha_blue/20">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Review Your Order</h2>
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">{currentText.reviewOrder}</h2>
                 <div className="space-y-4 mb-8">
                   {cartItems.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
                       <img
                         src={item.image || "/placeholder.svg"}
-alt={typeof item.name === "object" && item.name !== null ? item.name[language] : item.name}                        className="w-16 h-16 object-cover rounded-lg"
+                        alt={typeof item.name === "object" && item.name !== null ? item.name[language] : item.name}
+                        className="w-16 h-16 object-cover rounded-lg"
                       />
                       <div className="flex-1">
-<h3 className="font-semibold text-gray-800">
-  {typeof item.name === "object" && item.name !== null
-    ? item.name[language]
-    : item.name}
-</h3>                        <p className="text-gray-600">
-                          Qty: {item.quantity} × ${item.price}
+                        <h3 className="font-semibold text-gray-800">
+                          {typeof item.name === "object" && item.name !== null
+                            ? item.name[language]
+                            : item.name}
+                        </h3>
+                        <p className="text-gray-600">
+                          Qty: {item.quantity} × {language === 'EN' ? '$' : 'ETB '}{formatPrice(item.price)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-habesha_blue">${(item.quantity * item.price).toFixed(2)}</p>
+                        <p className="font-bold text-habesha_blue">
+                          {language === 'EN' ? '$' : 'ETB '}{formatPrice(item.quantity * item.price)}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -203,9 +253,10 @@ alt={typeof item.name === "object" && item.name !== null ? item.name[language] :
                   </button>
                   <button
                     onClick={handleNextStep}
-                    className="flex-1 bg-gradient-to-r from-habesha_blue to-blue-400 text-white py-3 px-6 rounded-xl hover:from-blue-400 hover:to-habesha_blue transition-all duration-300 font-semibold"
+                    disabled={loading}
+                    className="flex-1 bg-habesha_blue text-white py-3 px-6 rounded-xl hover:bg-blue-700 transition-all duration-300 font-semibold disabled:opacity-50"
                   >
-                    {currentText.proceedToPayment}
+                    {loading ? 'Processing...' : currentText.proceedToPayment}
                   </button>
                 </div>
               </div>
@@ -214,9 +265,10 @@ alt={typeof item.name === "object" && item.name !== null ? item.name[language] :
             {currentStep === 2 && (
               <PaymentInstructions
                 bankDetails={bankDetails}
-                total={total}
+                total={orderDetails?.totalPrice || total}
                 language={language}
                 onNext={handleNextStep}
+                formatPrice={formatPrice}
               />
             )}
 
@@ -227,6 +279,9 @@ alt={typeof item.name === "object" && item.name !== null ? item.name[language] :
                 onSubmit={handleSubmitOrder}
                 loading={loading}
                 language={language}
+                orderId={orderId}
+                total={orderDetails?.totalPrice || total}
+                formatPrice={formatPrice}
               />
             )}
           </div>

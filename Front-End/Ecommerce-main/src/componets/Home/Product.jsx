@@ -65,22 +65,33 @@ const Product = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setError(null); // Clear previous errors
       const response = await userProductService.getProducts();
       setProducts(response.data);
       const token = localStorage.getItem('token');
       if (token) {
-        const favoritePromises = response.data.map((item) =>
-          userProductService.isFavorited(item.id).then((res) => ({
-            id: item.id,
-            favorited: res.data.favorited,
-          }))
-        );
-        const favoriteResults = await Promise.all(favoritePromises);
-        const favoritesMap = favoriteResults.reduce(
-          (acc, { id, favorited }) => ({ ...acc, [id]: favorited }),
-          {}
-        );
-        setFavorites(favoritesMap);
+        try {
+          const favoritePromises = response.data.map((item) =>
+            userProductService.isFavorited(item.id).then((res) => ({
+              id: item.id,
+              favorited: res.data.favorited,
+            }))
+          );
+          const favoriteResults = await Promise.all(favoritePromises);
+          const favoritesMap = favoriteResults.reduce(
+            (acc, { id, favorited }) => ({ ...acc, [id]: favorited }),
+            {}
+          );
+          setFavorites(favoritesMap);
+        } catch (err) {
+          if (err.response && [401, 403].includes(err.response.status)) {
+            localStorage.removeItem('token');
+            setFavorites({});
+          } else {
+            console.error('Failed to fetch favorites:', err);
+            setFavorites({});
+          }
+        }
       }
       setLoading(false);
     } catch (err) {

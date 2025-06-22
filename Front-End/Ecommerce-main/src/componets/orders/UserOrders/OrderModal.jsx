@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import CloseIcon from "@mui/icons-material/Close"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import LocalShippingIcon from "@mui/icons-material/LocalShipping"
@@ -7,8 +8,14 @@ import RefreshIcon from "@mui/icons-material/Refresh"
 import CancelIcon from "@mui/icons-material/Cancel"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney"
+import ReceiptIcon from "@mui/icons-material/Receipt"
+import userOrderService from "../../../service/userOrderService"
 
-const OrderModal = ({ order, language, onClose }) => {
+const OrderModal = ({ order, language, onClose, formatPrice, formatNumber }) => {
+  const [proofImage, setProofImage] = useState(null)
+  const [proofError, setProofError] = useState(null)
+  const [proofLoading, setProofLoading] = useState(false)
+
   const text = {
     EN: {
       orderDetails: "Order Details",
@@ -24,6 +31,10 @@ const OrderModal = ({ order, language, onClose }) => {
       quantity: "Quantity",
       price: "Price",
       subtotal: "Subtotal",
+      paymentProof: "Payment Proof",
+      noProof: "No payment proof uploaded",
+      loadingProof: "Loading payment proof...",
+      proofError: "Failed to load payment proof",
     },
     AMH: {
       orderDetails: "የትዕዛዝ ዝርዝሮች",
@@ -39,21 +50,49 @@ const OrderModal = ({ order, language, onClose }) => {
       quantity: "ብዛት",
       price: "ዋጋ",
       subtotal: "ንዑስ ድምር",
+      paymentProof: "የክፍያ ማረጋገጫ",
+      noProof: "ምንም የክፍያ ማረጋገጫ አልተሰቀለም",
+      loadingProof: "የክፍያ ማረጋገጫ በመጫን ላይ...",
+      proofError: "የክፍያ ማረጋገጫ መጫን አልተሳካም",
     },
   }
 
   const currentText = text[language]
 
+  useEffect(() => {
+    const fetchProof = async () => {
+      try {
+        setProofLoading(true)
+        setProofError(null)
+        const response = await userOrderService.getOrderProof(order.id)
+        if (response.status === 204) {
+          setProofImage(null)
+        } else {
+          const imageUrl = URL.createObjectURL(response.data)
+          setProofImage(imageUrl)
+        }
+      } catch (err) {
+        setProofError(currentText.proofError)
+      } finally {
+        setProofLoading(false)
+      }
+    }
+    fetchProof()
+    return () => {
+      if (proofImage) URL.revokeObjectURL(proofImage)
+    }
+  }, [order.id, currentText.proofError])
+
   const getStatusIcon = (status) => {
     switch (status) {
       case "delivered":
-        return <CheckCircleIcon className="text-green-500" />
+        return <CheckCircleIcon className="text-green-500 w-5 h-5 sm:w-6 sm:h-6" />
       case "shipped":
-        return <LocalShippingIcon className="text-blue-500" />
+        return <LocalShippingIcon className="text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />
       case "processing":
-        return <RefreshIcon className="text-yellow-500 animate-spin" />
+        return <RefreshIcon className="text-yellow-500 animate-spin w-5 h-5 sm:w-6 sm:h-6" />
       case "cancelled":
-        return <CancelIcon className="text-red-500" />
+        return <CancelIcon className="text-red-500 w-5 h-5 sm:w-6 sm:h-6" />
       default:
         return null
     }
@@ -75,117 +114,175 @@ const OrderModal = ({ order, language, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in duration-300">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-habesha_blue to-blue-400 text-white p-6">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in duration-300">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-sm sm:max-w-2xl lg:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden animate-in zoom-in duration-300">
+        <div className="bg-habesha_blue text-white p-4 sm:p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-2xl">
-                <CalendarTodayIcon className="text-2xl" />
+            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+              <div className="bg-white/20 p-2 sm:p-3 rounded-xl sm:rounded-2xl flex-shrink-0">
+                <CalendarTodayIcon className="text-lg sm:text-2xl" />
               </div>
-              <div>
-                <h2 className="text-2xl font-bold">{currentText.orderDetails}</h2>
-                <p className="text-blue-100">#{order.id}</p>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg sm:text-2xl font-bold truncate">{currentText.orderDetails}</h2>
+                <p className="text-blue-100 text-sm sm:text-base">#{order.id}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors duration-200"
+              className="bg-white/20 hover:bg-white/30 p-2 rounded-xl transition-colors duration-200 flex-shrink-0 ml-2"
             >
-              <CloseIcon />
+              <CloseIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
         </div>
-
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {/* Order Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-gradient-to-br from-habesha_blue/10 to-habesha_blue/20 rounded-2xl p-6 text-center border border-habesha_blue/20">
-              <CalendarTodayIcon className="text-habesha_blue text-3xl mb-3 mx-auto" />
-              <h3 className="font-semibold text-gray-800 mb-2">{currentText.orderDate}</h3>
-              <p className="text-lg font-bold text-habesha_blue">{new Date(order.date).toLocaleDateString()}</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center border border-blue-200">
-              <div className="mb-3">{getStatusIcon(order.status)}</div>
-              <h3 className="font-semibold text-gray-800 mb-2">{currentText.orderStatus}</h3>
-              <div
-                className={`inline-block px-4 py-2 rounded-full text-sm font-semibold border-2 ${getStatusColor(order.status)}`}
-              >
-                {currentText[order.status]}
+        <div className="p-3 sm:p-6 overflow-y-auto max-h-[calc(95vh-80px)] sm:max-h-[calc(90vh-120px)]">
+          <div className="space-y-3 sm:grid sm:grid-cols-1 md:grid-cols-3 sm:gap-6 sm:space-y-0 mb-6 sm:mb-8">
+            <div className="bg-gray-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200">
+              <div className="flex items-center gap-3 sm:flex-col sm:text-center">
+                <CalendarTodayIcon className="text-habesha_blue text-xl sm:text-3xl flex-shrink-0" />
+                <div className="flex-1 sm:flex-none">
+                  <h3 className="font-semibold text-gray-800 text-sm sm:text-base mb-1 sm:mb-2">
+                    {currentText.orderDate}
+                  </h3>
+                  <p className="text-base sm:text-lg font-bold text-habesha_blue">
+                    {new Date(order.date).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
             </div>
-
-            <div className="bg-gradient-to-br from-habesha_blue/10 to-habesha_blue/20 rounded-2xl p-6 text-center border border-habesha_blue/20">
-              <AttachMoneyIcon className="text-habesha_blue text-3xl mb-3 mx-auto" />
-              <h3 className="font-semibold text-gray-800 mb-2">{currentText.totalAmount}</h3>
-              <p className="text-2xl font-bold bg-gradient-to-r from-habesha_blue to-blue-400 bg-clip-text text-transparent">
-                ${order.total}
-              </p>
+            <div className="bg-gray-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200">
+              <div className="flex items-center gap-3 sm:flex-col sm:text-center">
+                <div className="flex-shrink-0">{getStatusIcon(order.status)}</div>
+                <div className="flex-1 sm:flex-none">
+                  <h3 className="font-semibold text-gray-800 text-sm sm:text-base mb-1 sm:mb-2">
+                    {currentText.orderStatus}
+                  </h3>
+                  <div
+                    className={`inline-block px-3 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border-2 ${getStatusColor(order.status)}`}
+                  >
+                    {currentText[order.status]}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200">
+              <div className="flex items-center gap-3 sm:flex-col sm:text-center">
+                <AttachMoneyIcon className="text-habesha_blue text-xl sm:text-3xl flex-shrink-0" />
+                <div className="flex-1 sm:flex-none">
+                  <h3 className="font-semibold text-gray-800 text-sm sm:text-base mb-1 sm:mb-2">
+                    {currentText.totalAmount}
+                  </h3>
+                  <p className="text-xl sm:text-2xl font-bold text-habesha_blue">
+                    {language === 'EN' ? '$' : 'ETB '}{formatPrice(order.total)}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* Items */}
-          <div className="bg-gray-50 rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3">
-              <div className="bg-gradient-to-r from-habesha_blue to-blue-400 p-2 rounded-xl">
-                <span className="text-white font-bold">{order.items.length}</span>
+          <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-3">
+              <div className="bg-habesha_blue p-2 rounded-xl">
+                <span className="text-white font-bold text-sm sm:text-base">{formatNumber(order.items.length)}</span>
               </div>
-              {currentText.items}
+              <span className="text-sm sm:text-xl">{currentText.items}</span>
             </h3>
-
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {order.items.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+                  className="bg-white rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
                 >
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={item.image || "/placeholder.svg"}
-                      alt={item.name[language]}
-                      className="w-20 h-20 object-cover rounded-xl border-2 border-gray-200"
-                    />
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 text-lg mb-2">{item.name[language]}</h4>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">{currentText.quantity}:</span>
-                          <span className="font-semibold ml-2">{item.quantity}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3 sm:flex-1">
+                      <img
+                        src={item.image || "/placeholder.svg"}
+                        alt={item.name[language]}
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl border-2 border-gray-200 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-800 text-sm sm:text-lg mb-1 sm:mb-2 line-clamp-2">
+                          {item.name[language]}
+                        </h4>
+                      </div>
+                    </div>
+                    <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:text-sm">
+                      <div className="flex flex-col gap-2 sm:hidden">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                          <span className="text-gray-600 text-sm">{currentText.quantity}:</span>
+                          <span className="font-semibold text-sm">{formatNumber(item.quantity)}</span>
                         </div>
-                        <div>
-                          <span className="text-gray-600">{currentText.price}:</span>
-                          <span className="font-semibold ml-2">${item.price}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">{currentText.subtotal}:</span>
-                          <span className="font-bold text-habesha_blue ml-2">
-                            ${(item.quantity * item.price).toFixed(2)}
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                          <span className="text-gray-600 text-sm">{currentText.price}:</span>
+                          <span className="font-semibold text-sm">
+                            {language === 'EN' ? '$' : 'ETB '}{formatPrice(item.price)}
                           </span>
                         </div>
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-gray-600 text-sm">{currentText.subtotal}:</span>
+                          <span className="font-bold text-habesha_blue text-sm">
+                            {language === 'EN' ? '$' : 'ETB '}{formatPrice(item.quantity * item.price)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="hidden sm:block text-center md:text-left">
+                        <span className="text-gray-600">{currentText.quantity}:</span>
+                        <span className="font-semibold ml-2">{formatNumber(item.quantity)}</span>
+                      </div>
+                      <div className="hidden sm:block text-center md:text-left">
+                        <span className="text-gray-600">{currentText.price}:</span>
+                        <span className="font-semibold ml-2">
+                          {language === 'EN' ? '$' : 'ETB '}{formatPrice(item.price)}
+                        </span>
+                      </div>
+                      <div className="hidden sm:block text-center md:text-left">
+                        <span className="text-gray-600">{currentText.subtotal}:</span>
+                        <span className="font-bold text-habesha_blue ml-2">
+                          {language === 'EN' ? '$' : 'ETB '}{formatPrice(item.quantity * item.price)}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* Total */}
-            <div className="mt-6 pt-6 border-t-2 border-gray-200">
-              <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-xl border-2 border-habesha_blue/20">
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-semibold text-gray-700">{currentText.totalAmount}</span>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold bg-gradient-to-r from-habesha_blue to-blue-400 bg-clip-text text-transparent">
-                      ${order.total}
+            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t-2 border-gray-200">
+              <div className="bg-gray-100 p-4 sm:p-6 rounded-xl border-2 border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0">
+                  <span className="text-lg sm:text-xl font-semibold text-gray-700">{currentText.totalAmount}</span>
+                  <div className="text-left sm:text-right">
+                    <div className="text-2xl sm:text-3xl font-bold text-habesha_blue">
+                      {language === 'EN' ? '$' : 'ETB '}{formatPrice(order.total)}
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">Final Amount</div>
+                    <div className="text-xs sm:text-sm text-gray-500 mt-1">Final Amount</div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+          <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-3">
+              <div className="bg-habesha_blue p-2 rounded-xl">
+                <ReceiptIcon className="text-white text-sm sm:text-base" />
+              </div>
+              <span className="text-sm sm:text-xl">{currentText.paymentProof}</span>
+            </h3>
+            {proofLoading ? (
+              <div className="text-center text-gray-600">{currentText.loadingProof}</div>
+            ) : proofError ? (
+              <div className="bg-red-100 text-red-600 p-3 rounded-xl text-center">{proofError}</div>
+            ) : proofImage ? (
+              <div className="flex justify-center">
+                <img
+                  src={proofImage}
+                  alt="Payment Proof"
+                  className="max-w-full max-h-96 rounded-xl border-2 border-gray-200 object-contain"
+                />
+              </div>
+            ) : (
+              <div className="bg-gray-100 p-4 rounded-xl text-center text-gray-600">
+                {currentText.noProof}
+              </div>
+            )}
           </div>
         </div>
       </div>

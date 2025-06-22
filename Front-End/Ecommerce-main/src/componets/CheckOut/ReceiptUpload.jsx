@@ -5,7 +5,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import DeleteIcon from "@mui/icons-material/Delete"
 import { useRef } from "react"
 
-const ReceiptUpload = ({ uploadedReceipt, setUploadedReceipt, onSubmit, loading, language }) => {
+const ReceiptUpload = ({ uploadedReceipt, setUploadedReceipt, onSubmit, loading, language, orderId, total, formatPrice }) => {
   const fileInputRef = useRef(null)
 
   const text = {
@@ -24,6 +24,7 @@ const ReceiptUpload = ({ uploadedReceipt, setUploadedReceipt, onSubmit, loading,
       req2: "Shows the exact amount transferred",
       req3: "Shows the recipient account details",
       req4: "Shows the transaction date and time",
+      amountPaid: "Amount Paid",
     },
     AMH: {
       uploadReceipt: "የክፍያ ደረሰኝ ይላኩ",
@@ -40,14 +41,14 @@ const ReceiptUpload = ({ uploadedReceipt, setUploadedReceipt, onSubmit, loading,
       req2: "የተላለፈውን ትክክለኛ መጠን ያሳያል",
       req3: "የተቀባይ መለያ ዝርዝሮችን ያሳያል",
       req4: "የግብይት ቀን እና ሰዓት ያሳያል",
+      amountPaid: "የተከፈለ መጠን",
     },
   }
 
   const currentText = text[language]
 
   const handleFileSelect = (file) => {
-    if (file && file.size <= 5 * 1024 * 1024) {
-      // 5MB limit
+    if (file && file.size <= 5 * 1024 * 1024) { // 5MB limit
       setUploadedReceipt(file)
     } else {
       alert("File size must be less than 5MB")
@@ -73,6 +74,14 @@ const ReceiptUpload = ({ uploadedReceipt, setUploadedReceipt, onSubmit, loading,
       </h2>
 
       <p className="text-gray-600 mb-8">{currentText.uploadInstructions}</p>
+
+      {/* Amount Paid */}
+      <div className="mb-8 p-6 bg-habesha_blue/10 rounded-xl border-2 border-habesha_blue/20">
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">{currentText.amountPaid}</h3>
+        <div className="text-4xl font-bold text-habesha_blue">
+          {language === 'EN' ? '$' : 'ETB '}{formatPrice(total)}
+        </div>
+      </div>
 
       {/* Upload Area */}
       <div className="mb-8">
@@ -130,8 +139,8 @@ const ReceiptUpload = ({ uploadedReceipt, setUploadedReceipt, onSubmit, loading,
       {/* Submit Button */}
       <button
         onClick={onSubmit}
-        disabled={!uploadedReceipt || loading}
-        className="w-full bg-gradient-to-r from-habesha_blue to-blue-400 text-white py-4 px-6 rounded-xl hover:from-blue-400 hover:to-habesha_blue transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+        disabled={!uploadedReceipt || loading || !orderId}
+        className="w-full bg-habesha_blue text-white py-4 px-6 rounded-xl hover:bg-blue-700 transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
       >
         {loading ? (
           <>

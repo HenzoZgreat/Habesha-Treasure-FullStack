@@ -39,11 +39,11 @@ const OrderSuccess = ({ language, navigate }) => {
   const orderNumber = "ORD-" + Math.random().toString(36).substr(2, 9).toUpperCase()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-12 text-center border border-habesha_blue/20">
           {/* Success Icon */}
-          <div className="bg-gradient-to-r from-green-400 to-green-500 p-6 rounded-full w-24 h-24 mx-auto mb-8 flex items-center justify-center">
+          <div className="bg-habesha_blue p-6 rounded-full w-24 h-24 mx-auto mb-8 flex items-center justify-center">
             <CheckCircleIcon className="text-white text-5xl" />
           </div>
 
@@ -53,9 +53,9 @@ const OrderSuccess = ({ language, navigate }) => {
           <p className="text-gray-600 mb-8 leading-relaxed">{currentText.message}</p>
 
           {/* Order Number */}
-          <div className="bg-gradient-to-r from-habesha_blue/10 to-blue-50 p-6 rounded-xl mb-8 border border-habesha_blue/20">
+          <div className="bg-habesha_blue/10 p-6 rounded-xl mb-8 border border-habesha_blue/20">
             <p className="text-sm text-gray-600 mb-2">{currentText.orderNumber}</p>
-            <p className="text-2xl font-bold bg-gradient-to-r from-habesha_blue to-blue-400 bg-clip-text text-transparent">
+            <p className="text-2xl font-bold text-habesha_blue">
               {orderNumber}
             </p>
           </div>
@@ -66,7 +66,7 @@ const OrderSuccess = ({ language, navigate }) => {
             <div className="space-y-3">
               {[currentText.step1, currentText.step2, currentText.step3, currentText.step4].map((step, index) => (
                 <div key={index} className="flex items-center gap-4">
-                  <div className="w-8 h-8 bg-gradient-to-r from-habesha_blue to-blue-400 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                  <div className="w-8 h-8 bg-habesha_blue text-white rounded-full flex items-center justify-center font-semibold text-sm">
                     {index + 1}
                   </div>
                   <p className="text-gray-700">{step}</p>
@@ -86,7 +86,7 @@ const OrderSuccess = ({ language, navigate }) => {
             </button>
             <button
               onClick={() => navigate("/orders")}
-              className="flex-1 bg-gradient-to-r from-habesha_blue to-blue-400 text-white py-3 px-6 rounded-xl hover:from-blue-400 hover:to-habesha_blue transition-all duration-300 font-semibold flex items-center justify-center gap-2"
+              className="flex-1 bg-habesha_blue text-white py-3 px-6 rounded-xl hover:bg-blue-700 transition-all duration-300 font-semibold flex items-center justify-center gap-2"
             >
               <ShoppingBagIcon />
               {currentText.viewOrders}

@@ -5,7 +5,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import { useState } from "react"
 
-const PaymentInstructions = ({ bankDetails, total, language, onNext }) => {
+const PaymentInstructions = ({ bankDetails, total, language, onNext, formatPrice }) => {
   const [copiedField, setCopiedField] = useState("")
 
   const text = {
@@ -71,7 +71,7 @@ const PaymentInstructions = ({ bankDetails, total, language, onNext }) => {
         <div className="space-y-4">
           {[currentText.step1, currentText.step2, currentText.step3].map((step, index) => (
             <div key={index} className="flex items-center gap-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-habesha_blue to-blue-400 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+              <div className="w-8 h-8 bg-habesha_blue text-white rounded-full flex items-center justify-center font-semibold text-sm">
                 {index + 1}
               </div>
               <p className="text-gray-700">{step}</p>
@@ -81,10 +81,10 @@ const PaymentInstructions = ({ bankDetails, total, language, onNext }) => {
       </div>
 
       {/* Amount to Pay */}
-      <div className="mb-8 p-6 bg-gradient-to-r from-habesha_blue/10 to-blue-50 rounded-xl border-2 border-habesha_blue/20">
+      <div className="mb-8 p-6 bg-habesha_blue/10 rounded-xl border-2 border-habesha_blue/20">
         <h3 className="text-lg font-semibold text-gray-800 mb-2">{currentText.amountToPay}</h3>
-        <div className="text-4xl font-bold bg-gradient-to-r from-habesha_blue to-blue-400 bg-clip-text text-transparent">
-          ${total.toFixed(2)}
+        <div className="text-4xl font-bold text-habesha_blue">
+          {language === 'EN' ? '$' : 'ETB '}{formatPrice(total)}
         </div>
       </div>
 
@@ -143,7 +143,7 @@ const PaymentInstructions = ({ bankDetails, total, language, onNext }) => {
       {/* Continue Button */}
       <button
         onClick={onNext}
-        className="w-full bg-gradient-to-r from-habesha_blue to-blue-400 text-white py-4 px-6 rounded-xl hover:from-blue-400 hover:to-habesha_blue transition-all duration-300 font-semibold text-lg"
+        className="w-full bg-habesha_blue text-white py-4 px-6 rounded-xl hover:bg-blue-700 transition-all duration-300 font-semibold text-lg"
       >
         {currentText.continueToUpload}
       </button>

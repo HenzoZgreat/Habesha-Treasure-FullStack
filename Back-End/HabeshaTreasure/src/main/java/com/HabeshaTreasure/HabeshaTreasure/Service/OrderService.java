@@ -1,5 +1,6 @@
 package com.HabeshaTreasure.HabeshaTreasure.Service;
 
+import com.HabeshaTreasure.HabeshaTreasure.DTO.AdminOrderResponseDTO;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.OrderItemDTO;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.UserOrderResponseDTO;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.CartItem;
@@ -13,6 +14,7 @@ import com.HabeshaTreasure.HabeshaTreasure.Repository.OrderRepo;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.ProductsRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -147,5 +149,59 @@ public class OrderService {
                 items
         );
     }
+
+    // ===================  Admin  ======================
+
+    public List<AdminOrderResponseDTO> getAllOrders() {
+        return orderRepo.findAll(Sort.by(Sort.Direction.DESC, "orderedAt"))
+                .stream()
+                .map(this::toAdminDto)
+                .toList();
+    }
+
+    public AdminOrderResponseDTO getOrderById(Long id) {
+        Order order = orderRepo.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Order not found"));
+        return toAdminDto(order);
+    }
+
+    public void setStatus(Long orderId, OrderStatus status) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new NoSuchElementException("Order not found"));
+        order.setStatus(status);
+        orderRepo.save(order);
+    }
+
+    public byte[] getPaymentProof(Long orderId) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new NoSuchElementException("Order not found"));
+        return order.getPaymentProof();
+    }
+
+
+    private AdminOrderResponseDTO toAdminDto(Order order) {
+        User u = order.getUser();
+        List<OrderItemDTO> items = order.getItems().stream()
+                .map(i -> new OrderItemDTO(
+                        i.getProductName(),
+                        i.getProductPrice(),
+                        i.getProductImage(),
+                        i.getQuantity()
+                ))
+                .toList();
+
+        return new AdminOrderResponseDTO(
+                order.getId(),
+                order.getTotalPrice(),
+                order.getOrderedAt(),
+                order.getStatus(),
+                u.getId(),
+                u.getUsersInfo().getFirstName() + " " + u.getUsersInfo().getLastName(),
+                u.getEmail(),
+                items
+        );
+    }
+
+
 }
 

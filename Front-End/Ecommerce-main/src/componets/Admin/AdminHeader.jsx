@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import api from '../api/api';
-
+import api from '../../componets/api/api';
 import {
   FiSearch, FiBell, FiMessageSquare, FiUser, FiChevronDown,
-  FiLogOut, FiSettings, FiHelpCircle
+  FiLogOut, FiSettings, FiHelpCircle, FiHome
 } from 'react-icons/fi';
 
-const AdminHeader = () => {
+const AdminHeader = ({ toggleSidebar, isOpen }) => {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [userError, setUserError] = useState(null);
@@ -31,11 +30,11 @@ const AdminHeader = () => {
         const response = await api.get('/auth/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
+        const initials = `${response.data.firstName[0]}${response.data.lastName[0]}`.toUpperCase();
         setUser({
           name: `${response.data.firstName} ${response.data.lastName}`,
           email: response.data.email,
-          avatar: 'https://via.placeholder.com/40/A9CCE3/2C3E50?text=' + 
-                  (response.data.firstName[0] + response.data.lastName[0]).toUpperCase()
+          initials: initials,
         });
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -66,11 +65,32 @@ const AdminHeader = () => {
 
   return (
     <header className="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-gray-200 sticky top-0 z-40">
-      {/* Left Side: Search Bar */}
-      <div className="flex items-center">
-        <div className="relative">
+      <div className="flex items-center space-x-4">
+        <button
+          onClick={toggleSidebar}
+          className="p-2 rounded-full text-gray-500 hover:bg-gray-100 sm:hidden"
+          aria-label="Toggle sidebar"
+        >
+          <svg
+            className={`h-6 w-6 transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-90' : 'rotate-0'}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <NavLink
+          to="/"
+          className="flex items-center p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors duration-200"
+          aria-label="Go to home page"
+        >
+          <FiHome className="h-5 w-5 sm:h-6 sm:w-6" />
+          <span className="hidden sm:inline ml-2 text-sm font-medium text-gray-700">Home</span>
+        </NavLink>
+        <div className="relative hidden sm:block">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <FiSearch className="h-5 w-5 text-gray-400" aria-hidden="true" />
+            <FiSearch className="h-5 w-5 text-gray-400" />
           </div>
           <input
             id="search-field"
@@ -80,16 +100,13 @@ const AdminHeader = () => {
             name="search"
           />
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <kbd className="hidden sm:inline-flex items-center border border-gray-200 rounded px-2 py-0.5 text-xs font-sans font-medium text-gray-400">
+            <kbd className="inline-flex items-center border border-gray-200 rounded px-2 py-0.5 text-xs font-sans font-medium text-gray-400">
               ⌘K
             </kbd>
           </div>
         </div>
       </div>
-
-      {/* Right Side: Icons and User Profile */}
       <div className="flex items-center space-x-3 sm:space-x-5">
-        {/* Notifications Icon & Dropdown */}
         <div className="relative">
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -117,8 +134,6 @@ const AdminHeader = () => {
             </div>
           )}
         </div>
-
-        {/* Messages Icon */}
         <button
           className="p-1.5 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-habesha_blue"
           aria-label="View messages"
@@ -126,8 +141,6 @@ const AdminHeader = () => {
         >
           <FiMessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
-
-        {/* User Profile Dropdown */}
         <div className="relative">
           {loadingUser ? (
             <div className="h-9 w-24 bg-gray-200 rounded-full animate-pulse"></div>
@@ -145,16 +158,13 @@ const AdminHeader = () => {
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                 >
                   <span className="sr-only">Open user menu</span>
-                  <img
-                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-cover border-2 border-transparent hover:border-habesha_blue transition"
-                    src={user.avatar}
-                    alt={user.name}
-                  />
+                  <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-habesha_blue text-white flex items-center justify-center text-sm font-medium border-2 border-transparent hover:border-habesha_blue transition">
+                    {user.initials}
+                  </div>
                   <span className="hidden md:block ml-2 text-sm font-medium text-gray-700">{user.name}</span>
                   <FiChevronDown className="hidden md:block ml-1 h-4 w-4 text-gray-500" />
                 </button>
               </div>
-
               {userDropdownOpen && (
                 <div
                   className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-xl py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"

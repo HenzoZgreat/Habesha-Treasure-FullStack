@@ -1,5 +1,4 @@
-// src/layouts/AdminDashboardLayout.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import AdminSidebar from '../componets/Admin/AdminSidebar';
 import AdminHeader from '../componets/Admin/AdminHeader';
@@ -7,6 +6,8 @@ import api from '../componets/api/api';
 
 const AdminDashboardLayout = () => {
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile: closed by default
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true); // Desktop: expanded by default
 
   useEffect(() => {
     const checkSession = async () => {
@@ -35,11 +36,24 @@ const AdminDashboardLayout = () => {
     checkSession();
   }, [navigate]);
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const toggleSidebarExpansion = () => {
+    setIsSidebarExpanded(!isSidebarExpanded);
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
-      <AdminSidebar />
+      <AdminSidebar
+        isOpen={isSidebarOpen}
+        isExpanded={isSidebarExpanded}
+        toggleSidebar={toggleSidebar}
+        toggleExpansion={toggleSidebarExpansion}
+      />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader />
+        <AdminHeader toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
           <Outlet />
         </main>

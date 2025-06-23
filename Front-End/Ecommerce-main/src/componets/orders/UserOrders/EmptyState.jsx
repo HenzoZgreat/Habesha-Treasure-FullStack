@@ -21,7 +21,7 @@ const EmptyState = ({ language, navigate }) => {
   return (
     <div className="text-center py-20 animate-in fade-in duration-700">
       <div className="bg-gradient-to-br from-white to-blue-50 rounded-3xl p-12 max-w-md mx-auto shadow-xl border border-habesha_blue/20">
-        <div className="bg-gradient-to-r from-habesha_blue to-blue-400 p-6 rounded-2xl w-24 h-24 mx-auto mb-6 flex items-center justify-center shadow-lg">
+        <div className="bg-gradient-to-r from-habesha_blue to-blue-800 p-6 rounded-2xl w-24 h-24 mx-auto mb-6 flex items-center justify-center shadow-lg">
           <ShoppingBagIcon className="text-white text-4xl" />
         </div>
         <h2 className="text-3xl font-bold text-gray-800 mb-4">{currentText.noOrders}</h2>

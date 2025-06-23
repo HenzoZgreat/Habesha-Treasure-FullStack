@@ -1,23 +1,22 @@
-// src/components/orders/OrderTableRow.jsx
 import React from 'react';
 import { FiEye, FiRefreshCw, FiEdit3, FiTruck, FiCheckCircle, FiXCircle, FiDollarSign } from 'react-icons/fi';
 import { getOrderStatusClass } from '../../utils/helpers';
 
-// Helper to get icon component directly in this file for clarity
 const getOrderStatusIcon = (status) => {
-    switch (status) {
-      case 'Pending': return <FiRefreshCw className="mr-1.5 h-3 w-3" />;
-      case 'Processing': return <FiEdit3 className="mr-1.5 h-3 w-3" />;
-      case 'Shipped': return <FiTruck className="mr-1.5 h-3 w-3" />;
-      case 'Delivered': return <FiCheckCircle className="mr-1.5 h-3 w-3" />;
-      case 'Cancelled': return <FiXCircle className="mr-1.5 h-3 w-3" />;
-      case 'Refunded': return <FiDollarSign className="mr-1.5 h-3 w-3" />;
-      default: return null;
-    }
+  switch (status) {
+    case 'Pending': return <FiRefreshCw className="mr-1.5 h-3 w-3" />;
+    case 'Processing': return <FiEdit3 className="mr-1.5 h-3 w-3" />;
+    case 'Paid': return <FiCheckCircle className="mr-1.5 h-3 w-3" />;
+    case 'Shipped': return <FiTruck className="mr-1.5 h-3 w-3" />;
+    case 'Delivered': return <FiCheckCircle className="mr-1.5 h-3 w-3" />;
+    case 'Cancelled': return <FiXCircle className="mr-1.5 h-3 w-3" />;
+    case 'Rejected': return <FiXCircle className="mr-1.5 h-3 w-3" />;
+    default: return null;
+  }
 };
 
 const OrderTableRow = ({ order, isSelected, onSelectOrder, onViewOrderDetails, onUpdateStatus }) => {
-  const availableStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']; // Define available statuses for dropdown
+  const availableStatuses = ['Shipped', 'Delivered'];
 
   return (
     <tr className={`hover:bg-gray-50/50 transition-colors ${isSelected ? 'bg-habesha_blue/10' : ''}`}>
@@ -36,13 +35,13 @@ const OrderTableRow = ({ order, isSelected, onSelectOrder, onViewOrderDetails, o
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
         <div className="text-sm text-gray-800">{order.customerName}</div>
-        <div className="text-xs text-gray-500">{order.customerEmail}</div>
+        <div className="text-xs text-gray-500">{order.email}</div>
       </td>
       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
         {new Date(order.date).toLocaleDateString()}
       </td>
       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800 font-semibold">
-        ${order.total.toFixed(2)}
+        {order.total}
       </td>
       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
         {order.items}
@@ -69,9 +68,10 @@ const OrderTableRow = ({ order, isSelected, onSelectOrder, onViewOrderDetails, o
         <select
           value={order.status}
           onChange={(e) => onUpdateStatus(order.id, e.target.value)}
-          className="text-xs p-1.5 border border-gray-300 rounded-md focus:ring-habesha_blue focus:border-habesha_blue shadow-sm"
+          disabled={!['Paid', 'Shipped'].includes(order.status)}
+          className="text-xs p-1.5 border border-gray-300 rounded-md focus:ring-habesha_blue focus:border-habesha_blue shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           title="Update Status"
-          onClick={(e) => e.stopPropagation()} // Prevents row click if dropdown is part of clickable row area
+          onClick={(e) => e.stopPropagation()}
         >
           {availableStatuses.map(statusOption => (
             <option key={statusOption} value={statusOption}>{statusOption}</option>

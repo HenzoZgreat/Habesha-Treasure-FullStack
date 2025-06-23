@@ -27,12 +27,13 @@ import AdminDashboardLayout from "./layout/AdminDashboardLayout"; // Assuming th
 // Import Admin Pages
 import DashboardOverview from "./pages/Admin/DashboardOverview"; // The actual dashboard content page
 import ManageProducts from "./pages/ManageProducts";
-import ManageOrders from "./pages/ManageOrders";
+import ManageOrders from "./pages/Admin/Orders/ManageOrders";
 import ManageUsers from "./pages/ManageUsers";
 import SettingsPage from "./pages/Admin/SettingsPage";
 import SearchResults from "./pages/SearchResults";
 import Profile from "./pages/Profile";
 import UserDetails from "./pages/Admin/UserDetails";
+import OrderDetails from "./pages/Admin/Orders/OrderDetails"; 
 import EditUser from "./pages/Admin/EditUser"; 
 import AddUser from "./pages/Admin/AddUser"; 
 
@@ -81,13 +82,18 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<DashboardOverview />} /> {/* New route for overview */}
           <Route path="products" element={<ManageProducts />} />
+          
           <Route path="orders" element={<ManageOrders />} />
+          <Route path="orders/:id" element={<OrderDetails />} /> {/* Order details page */}
+          
           <Route path="users" element={<ManageUsers />} />
-          <Route path="setting" element={<SettingsPage />} />
-          <Route path="profile" element={<Profile />} />
           <Route path="users/:id" element={<UserDetails />} /> {/* User details page */}
           <Route path="users/edit/:id" element={<EditUser />} /> {/* Edit user page */}
           <Route path="users/add" element={<AddUser />} /> {/* Add user page */}
+          
+          <Route path="setting" element={<SettingsPage />} />
+          <Route path="profile" element={<Profile />} />
+          
 
           {/* Add other nested admin routes here */}
         </Route>

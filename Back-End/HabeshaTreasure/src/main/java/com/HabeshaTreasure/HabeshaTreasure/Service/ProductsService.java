@@ -26,6 +26,19 @@ public class ProductsService {
     private ReviewRepo reviewRepo;
 
 
+    public void updateProductStatusByStock(Products product) {
+        int stock = product.getStock();
+
+        String status = switch (stock) {
+            case 0 -> "Out of Stock";
+            default -> (stock <= 10) ? "Low Stock" : "Active";
+        };
+
+        product.setStatus(status);
+    }
+
+
+
     public List<Products> getAllProducts() {
         return productsRepo.findAll();
     }

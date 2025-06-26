@@ -14,6 +14,7 @@ import com.HabeshaTreasure.HabeshaTreasure.Repository.OrderRepo;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.ProductsRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,9 +29,14 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class OrderService {
 
+    @Autowired
     private final OrderRepo orderRepo;
+    @Autowired
     private final ProductsRepo productsRepo;
+    @Autowired
     private final CartItemRepo cartRepo;
+    @Autowired
+    private final ProductsService productsService;
 
 
     @Transactional
@@ -47,7 +53,9 @@ public class OrderService {
                     .orElseThrow(() -> new NoSuchElementException("Product not found"));
 
             product.setStock(product.getStock() + item.getQuantity());
+            productsService.updateProductStatusByStock(product);
             productsRepo.save(product);
+
         }
 
         order.setStatus(OrderStatus.CANCELLED);
@@ -70,6 +78,7 @@ public class OrderService {
             }
 
             product.setStock(product.getStock() - item.getQuantity());
+            productsService.updateProductStatusByStock(product);
             productsRepo.save(product);
 
             orderItems.add(new OrderItem(
@@ -177,6 +186,29 @@ public class OrderService {
                 .orElseThrow(() -> new NoSuchElementException("Order not found"));
         return order.getPaymentProof();
     }
+
+    @Transactional
+    public void rejectOrder(Long orderId) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new NoSuchElementException("Order not found"));
+
+        if (order.getStatus() == OrderStatus.REJECTED || order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Order is already rejected or cancelled");
+        }
+
+        for (OrderItem item : order.getItems()) {
+            Products product = productsRepo.findById(item.getProductId())
+                    .orElseThrow(() -> new NoSuchElementException("Product not found"));
+
+            product.setStock(product.getStock() + item.getQuantity());
+            productsService.updateProductStatusByStock(product);
+            productsRepo.save(product);
+        }
+
+        order.setStatus(OrderStatus.REJECTED);
+        orderRepo.save(order);
+    }
+
 
 
     private AdminOrderResponseDTO toAdminDto(Order order) {

@@ -55,7 +55,7 @@ public class AdminOrderController {
     @PutMapping("/{id}/reject")
     public ResponseEntity<?> rejectPayment(@PathVariable Long id) {
         try {
-            orderService.setStatus(id, OrderStatus.REJECTED);
+            orderService.rejectOrder(id);
             return ResponseEntity.ok("Payment rejected");
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found");
@@ -63,6 +63,7 @@ public class AdminOrderController {
             return ResponseEntity.internalServerError().body("Rejection failed");
         }
     }
+
 
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(@PathVariable Long id,

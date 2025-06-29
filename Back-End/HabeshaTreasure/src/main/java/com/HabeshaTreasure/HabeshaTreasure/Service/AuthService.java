@@ -1,10 +1,10 @@
 package com.HabeshaTreasure.HabeshaTreasure.Service;
 
-import com.HabeshaTreasure.HabeshaTreasure.Entity.Role;
-import com.HabeshaTreasure.HabeshaTreasure.Entity.User;
-import com.HabeshaTreasure.HabeshaTreasure.Entity.UsersInfo;
+import com.HabeshaTreasure.HabeshaTreasure.Entity.*;
+import com.HabeshaTreasure.HabeshaTreasure.Repository.PasswordResetTokenRepository;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.UserRepo;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.UsersInfoRepo;
+import com.HabeshaTreasure.HabeshaTreasure.Repository.VerificationTokenRepository;
 import com.HabeshaTreasure.HabeshaTreasure.SecurityService.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -23,41 +25,45 @@ public class AuthService {
     private UsersInfoRepo usersInfoRepository;
     @Autowired
     private JwtUtil jwtUtil;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private VerificationTokenRepository verificationTokenRepo;
+    @Autowired
+    private EmailService emailService;
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepo;
+
+
 
     public Map<String, String> registerUser(User givenUser) {
-        // Encode the password
+        // Encode password
         givenUser.setPassword(passwordEncoder.encode(givenUser.getPassword()));
 
-        // Set the bidirectional relationship between User and UsersInfo
+        // Set up UsersInfo
         if (givenUser.getUsersInfo() != null) {
             givenUser.getUsersInfo().setUser(givenUser);
             LocalDateTime now = LocalDateTime.now();
             givenUser.getUsersInfo().setJoined(now);
-            givenUser.getUsersInfo().setLastLogin(now); // Initialize with same timestamp
+            givenUser.getUsersInfo().setLastLogin(now);
+            givenUser.getUsersInfo().setEnabled(false); // Disable until email is verified
         }
 
-        // Save the user to the database
         userRepository.save(givenUser);
 
-        System.out.println("User saved to database successfully");
+        // Generate email verification token
+        String token = UUID.randomUUID().toString();
+        VerificationToken verificationToken = new VerificationToken(token, givenUser, LocalDateTime.now().plusMinutes(30));
+        verificationTokenRepo.save(verificationToken);
 
-        // Generate a JWT token
-        String token = jwtUtil.generateToken(new org.springframework.security.core.userdetails.User(
-                givenUser.getEmail(),
-                givenUser.getPassword(),
-                givenUser.getAuthorities()
-        ));
+        // Send verification email
+        String link = "http://localhost:8080/api/auth/verify-email?token=" + token;
+        emailService.send(givenUser.getEmail(), "Verify Your Email", "Click to verify: " + link);
 
-        // Return the token in a response map
         Map<String, String> response = new HashMap<>();
-        response.put("message", "User registered successfully");
-        response.put("token", token);
+        response.put("message", "User registered successfully. Please check your email to verify your account.");
         return response;
     }
-
 
     public Map<String, String> loginUser(String email, String password) {
         User user = userRepository.findByEmail(email);
@@ -91,6 +97,44 @@ public class AuthService {
         return response;
     }
 
+    public void sendForgotPasswordEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            // Do not reveal that the user doesn't exist
+            return;
+        }
+
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken(token, user, LocalDateTime.now().plusMinutes(15));
+        passwordResetTokenRepo.save(resetToken);
+
+        String link = "http://localhost:5173/reset-password?token=" + token;
+        String subject = "Reset your password";
+        String body = "Hi " + user.getUsersInfo().getFirstName() + ",\n\n" +
+                "Click the link to reset your password:\n" + link + "\n\n" +
+                "This link will expire in 15 minutes.";
+
+        emailService.send(user.getEmail(), subject, body);
+    }
+
+    public String resetPassword(String token, String newPassword) {
+        Optional<PasswordResetToken> optional = passwordResetTokenRepo.findByToken(token);
+        if (optional.isEmpty()) {
+            return "Invalid or expired reset token.";
+        }
+
+        PasswordResetToken resetToken = optional.get();
+        if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            return "Reset token has expired.";
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        passwordResetTokenRepo.delete(resetToken);
+
+        return "Password has been reset successfully.";
+    }
 
     public String handleOAuth2User(String email, String firstName, String lastName) {
         User user = userRepository.findByEmail(email);

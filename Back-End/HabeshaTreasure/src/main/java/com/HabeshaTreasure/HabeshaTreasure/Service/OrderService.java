@@ -15,6 +15,7 @@ import com.HabeshaTreasure.HabeshaTreasure.Repository.ProductsRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -174,6 +175,15 @@ public class OrderService {
         return toAdminDto(order);
     }
 
+    public List<AdminOrderResponseDTO> getRecentOrders(int count) {
+        return orderRepo.findAll(
+                        PageRequest.of(0, count, Sort.by(Sort.Direction.DESC, "orderedAt"))
+                )
+                .stream()
+                .map(this::toAdminDto)
+                .toList();
+    }
+
     public void setStatus(Long orderId, OrderStatus status) {
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new NoSuchElementException("Order not found"));
@@ -233,7 +243,6 @@ public class OrderService {
                 items
         );
     }
-
 
 }
 

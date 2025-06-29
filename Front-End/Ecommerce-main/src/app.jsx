@@ -6,26 +6,23 @@ import {
   Route,
   RouterProvider,
   ScrollRestoration,
-  Navigate // Import Navigate for default route
+  Navigate
 } from "react-router-dom";
-import { productsData } from "./componets/api/api"; // Corrected 'componets' to 'components'
-import Footer from "./componets/Footer/Footer";     // Corrected 'componets' to 'components'
-import Header from "./componets/Header/Header";     // Corrected 'componets' to 'components'
+import { productsData } from "./componets/api/api";
+import Footer from "./componets/Footer/Footer";
+import Header from "./componets/Header/Header";
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import SignIn from "./pages/SignIn";
 import Regestration from "./pages/Regestration";
-import ProductDetails from "./pages/User/ProductDetails"; // Assuming you have a ProductDetails page
-import Favorites from "./pages/User/FavoritesPage"; // Assuming you have a Favorites page
-import UserProfile from "./pages/User/ProfilePage"; // Assuming you have a Profile page
+import ResetPassword from "./pages/ResetPassword";
+import ProductDetails from "./pages/User/ProductDetails";
+import Favorites from "./pages/User/FavoritesPage";
+import UserProfile from "./pages/User/ProfilePage";
 import OrdersPage from "./pages/User/OrdersPage";
 import CheckoutPage from "./pages/User/CheckoutPage";
-
-// Import the Admin Layout
-import AdminDashboardLayout from "./layout/AdminDashboardLayout"; // Assuming this is your layout file
-
-// Import Admin Pages
-import DashboardOverview from "./pages/Admin/DashboardOverview"; // The actual dashboard content page
+import AdminDashboardLayout from "./layout/AdminDashboardLayout";
+import DashboardOverview from "./pages/Admin/DashboardOverview";
 import ManageProducts from "./pages/ManageProducts";
 import ManageOrders from "./pages/Admin/Orders/ManageOrders";
 import ManageUsers from "./pages/ManageUsers";
@@ -33,10 +30,9 @@ import SettingsPage from "./pages/Admin/SettingsPage";
 import SearchResults from "./pages/SearchResults";
 import Profile from "./pages/Profile";
 import UserDetails from "./pages/Admin/UserDetails";
-import OrderDetails from "./pages/Admin/Orders/OrderDetails"; 
-import EditUser from "./pages/Admin/EditUser"; 
-import AddUser from "./pages/Admin/AddUser"; 
-
+import OrderDetails from "./pages/Admin/Orders/OrderDetails";
+import EditUser from "./pages/Admin/EditUser";
+import AddUser from "./pages/Admin/AddUser";
 
 const Layout = () => {
   return (
@@ -52,50 +48,32 @@ const Layout = () => {
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
-      <Route> {/* Root Route, can be empty or have a general wrapper if needed */}
-        {/* Public facing layout and routes */}
+      <Route>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} loader={productsData}></Route>
-          <Route path="/product/:id" element={<ProductDetails />} /> {/* Product details page */}
+          <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />}></Route>
           <Route path="/favorites" element={<Favorites />}></Route>
-          <Route path="/profile" element={<UserProfile />}></Route> {/* User Profile page */}
-          <Route path="/orders" element={<OrdersPage />}></Route> {/* User Orders page */}
-          <Route path="/checkout" element={<CheckoutPage />}></Route> {/* Checkout page */}
-          
-          {/* Default route for the root path */}
-          {/* Add other public routes here if they share the Header/Footer Layout */}
+          <Route path="/profile" element={<UserProfile />}></Route>
+          <Route path="/orders" element={<OrdersPage />}></Route>
+          <Route path="/checkout" element={<CheckoutPage />}></Route>
         </Route>
-
-        {/* Authentication routes (typically don't have Header/Footer) */}
         <Route path="/SignIn" element={<SignIn />}></Route>
         <Route path="/Registration" element={<Regestration />}></Route>
+        <Route path="/reset-password" element={<ResetPassword />}></Route>
         <Route path="/search" element={<SearchResults />} />
-
-        {/* Profile route */}
-        
-
-
-        {/* Admin Section with its own Layout */}
-        <Route path="/admin" element={<AdminDashboardLayout />}> {/* Use the layout here */}
-          {/* Default route for /admin, navigate to the overview */}
+        <Route path="/admin" element={<AdminDashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardOverview />} /> {/* New route for overview */}
+          <Route path="dashboard" element={<DashboardOverview />} />
           <Route path="products" element={<ManageProducts />} />
-          
           <Route path="orders" element={<ManageOrders />} />
-          <Route path="orders/:id" element={<OrderDetails />} /> {/* Order details page */}
-          
+          <Route path="orders/:id" element={<OrderDetails />} />
           <Route path="users" element={<ManageUsers />} />
-          <Route path="users/:id" element={<UserDetails />} /> {/* User details page */}
-          <Route path="users/edit/:id" element={<EditUser />} /> {/* Edit user page */}
-          <Route path="users/add" element={<AddUser />} /> {/* Add user page */}
-          
+          <Route path="users/:id" element={<UserDetails />} />
+          <Route path="users/edit/:id" element={<EditUser />} />
+          <Route path="users/add" element={<AddUser />} />
           <Route path="setting" element={<SettingsPage />} />
           <Route path="profile" element={<Profile />} />
-          
-
-          {/* Add other nested admin routes here */}
         </Route>
       </Route>
     )

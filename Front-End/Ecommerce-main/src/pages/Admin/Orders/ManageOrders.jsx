@@ -13,7 +13,7 @@ import { FiLoader, FiAlertTriangle } from 'react-icons/fi';
 const ORDERS_PER_PAGE = 7;
 
 const ManageOrders = () => {
-  const [orders, setFilterOrders] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -21,10 +21,10 @@ const ManageOrders = () => {
   const USD_TO_ETB_RATE = 150;
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('All');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
-  const [orderStatuses] = useState(['Pending', 'Processing', 'Paid', 'Shipped', 'Delivered', 'Cancelled', 'Rejected']);
+  const [orderStatuses] = useState(['All', 'Pending', 'Processing', 'Paid', 'Shipped', 'Delivered', 'Cancelled', 'Rejected']);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
@@ -74,13 +74,13 @@ const ManageOrders = () => {
         status: statusMap[order.status] || 'Pending',
         paymentStatus: paymentStatusMap[order.status] || 'Pending',
       }));
-      setFilterOrders(normalizedOrders);
+      setOrders(normalizedOrders);
       setTotalOrders(normalizedOrders.length);
       setTotalPages(Math.ceil(normalizedOrders.length / ORDERS_PER_PAGE));
     } catch (err) {
       console.error("Failed to fetch orders:", err);
       setError(err.response?.data?.message || "Failed to load orders. Please try again.");
-      setFilterOrders([]);
+      setOrders([]);
       setTotalOrders(0);
       setTotalPages(0);
     } finally {
@@ -94,7 +94,7 @@ const ManageOrders = () => {
 
   const filteredOrders = orders
     .filter(order => {
-      if (filterStatus === 'all') return true;
+      if (filterStatus === 'All') return true;
       return order.status.toLowerCase() === filterStatus.toLowerCase();
     })
     .filter(order => {
@@ -191,7 +191,7 @@ const ManageOrders = () => {
       );
     }
     if (filteredOrders.length === 0 && !loading) {
-      const isFiltered = searchTerm || filterStatus !== 'all' || filterDateFrom || filterDateTo;
+      const isFiltered = searchTerm || filterStatus !== 'All' || filterDateFrom || filterDateTo;
       return <NoProductsFound
         message={isFiltered ? "No orders match your criteria" : "No orders found"}
         subMessage={isFiltered ? "Try adjusting your search or filters." : "There are currently no orders to display."}

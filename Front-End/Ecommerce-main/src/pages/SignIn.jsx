@@ -10,12 +10,15 @@ import api from '../componets/api/api';
 import { useSelector } from 'react-redux';
 
 const SignIn = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errEmail, setErrEmail] = useState("");
-  const [errPassword, setErrPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errEmail, setErrEmail] = useState('');
+  const [errPassword, setErrPassword] = useState('');
   const [notification, setNotification] = useState(null);
   const [showAdminPrompt, setShowAdminPrompt] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [errResetEmail, setErrResetEmail] = useState('');
 
   const navigate = useNavigate();
   const language = useSelector((state) => state.habesha.language);
@@ -45,6 +48,11 @@ const SignIn = () => {
       adminPrompt: 'Welcome, Admin! Where would you like to go?',
       adminDashboard: 'Admin Dashboard',
       userHome: 'User Home Page',
+      forgotPassword: 'Forgot Password?',
+      resetPassword: 'Reset Password',
+      resetEmailPrompt: 'Enter your email to receive a password reset link',
+      resetSuccess: 'Password reset link sent! Check your email.',
+      resetFailed: 'Failed to send reset link. Please try again.',
     },
     AMH: {
       signIn: 'ግባ',
@@ -70,6 +78,11 @@ const SignIn = () => {
       adminPrompt: 'እንኳን ደህና መጡ፣ አስተዳዳሪ! ወዴት መሄድ ይፈልጋሉ?',
       adminDashboard: 'የአስተዳዳሪ መቆጣጠሪያ ሰሌዳ',
       userHome: 'የተጠቃሚ መነሻ ገፅ',
+      forgotPassword: 'የይለፍ ቃል ረሳኽው?',
+      resetPassword: 'የይለፍ ቃል ዳግም አስጀምር',
+      resetEmailPrompt: 'የይለፍ ቃል ዳግም ማስጀመሪያ አገናኝ ለመቀበል ኢሜይልህን አስገባ',
+      resetSuccess: 'የይለፍ ቃል ዳግም ማስጀመሪያ አገናኝ ተልኳል! ኢሜይልህን ፈትሽ።',
+      resetFailed: 'ዳግም ማስጀመሪያ አገናኝ መላክ አልተሳካም። እባክህ እንደገና ሞክር።',
     },
   };
 
@@ -83,6 +96,11 @@ const SignIn = () => {
   const handlePassword = (e) => {
     setPassword(e.target.value);
     setErrPassword('');
+  };
+
+  const handleResetEmail = (e) => {
+    setResetEmail(e.target.value);
+    setErrResetEmail('');
   };
 
   const emailValidation = (email) => {
@@ -105,7 +123,7 @@ const SignIn = () => {
     if (!password) {
       setErrPassword(currentText.enterPassword);
       isValid = false;
-    } else if (password.length < 3) {
+    } else if (password.length < 6) {
       setErrPassword(currentText.passwordLength);
       isValid = false;
     }
@@ -118,7 +136,6 @@ const SignIn = () => {
         password,
       });
 
-      // Store JWT token in localStorage
       localStorage.setItem('token', response.data.token);
 
       setNotification({ message: currentText.loginSuccess, type: 'success' });
@@ -127,7 +144,6 @@ const SignIn = () => {
       setEmail('');
       setPassword('');
 
-      // Check user role and handle navigation
       if (response.data.Role === 'ADMIN') {
         setShowAdminPrompt(true);
       } else {
@@ -143,6 +159,30 @@ const SignIn = () => {
   const handleGoogleSignIn = () => {
     setNotification({ message: 'Google Sign-In functionality will be implemented later.', type: 'info' });
     setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+
+    if (!resetEmail) {
+      setErrResetEmail(currentText.enterEmail);
+      return;
+    } else if (!emailValidation(resetEmail)) {
+      setErrResetEmail(currentText.enterValidEmail);
+      return;
+    }
+
+    try {
+      await api.post('/auth/forgot-password', { email: resetEmail });
+      setNotification({ message: currentText.resetSuccess, type: 'success' });
+      setShowForgotPassword(false);
+      setResetEmail('');
+      setTimeout(() => setNotification(null), 5000);
+    } catch (error) {
+      const msg = error.response?.data?.message || currentText.resetFailed;
+      setNotification({ message: msg, type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
   const handleAdminChoice = (destination) => {
@@ -209,6 +249,46 @@ const SignIn = () => {
         </div>
       )}
 
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-habesha_blue">{currentText.resetPassword}</h2>
+              <button
+                onClick={() => setShowForgotPassword(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <CloseIcon className="text-sm" />
+              </button>
+            </div>
+            <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium pb-2">{currentText.resetEmailPrompt}</p>
+                <input
+                  onChange={handleResetEmail}
+                  value={resetEmail}
+                  className="w-full lowercase py-1 border border-zinc-400 px-2 text-base rounded-sm outline-none focus-within:border-[#e77600] focus-within:shadow-habeshaInput duration-100"
+                  type="email"
+                />
+                {errResetEmail && (
+                  <p className="text-red-600 text-xs font-semibold tracking-wide flex items-center gap-2 -mt-1.5">
+                    <span className="italic font-titleFont font-semibold text-base">!</span>
+                    {errResetEmail}
+                  </p>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="w-full py-1.5 text-sm font-normal rounded-sm bg-gradient-to-t from-[#f7dfa5] to-[#f0c14b] hover:bg-gradient-to-b border border-zinc-400 active:border-yellow-800 active:shadow-habeshaInput"
+              >
+                {currentText.continue}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="w-full bg-gray-100 pb-10">
         <form className="w-[350px] mx-auto flex flex-col items-center">
           {/* Return to Home Icon */}
@@ -257,6 +337,15 @@ const SignIn = () => {
                     {errPassword}
                   </p>
                 )}
+                <p className="text-xs text-gray-600 mt-2 cursor-pointer group">
+                  <ArrowRightIcon />
+                  <span
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-blue-600 group-hover:text-orange-700 group-hover:underline underline-offset-1"
+                  >
+                    {currentText.forgotPassword}
+                  </span>
+                </p>
               </div>
 
               {/* Submit Button */}
@@ -270,7 +359,7 @@ const SignIn = () => {
               {/* Google Sign-In Button */}
               <button
                 onClick={handleGoogleSignIn}
-                className="w-full py-1.5 text-sm font-normal rounded-sm bg-gradient-to-t from-[#f7dfa5] to [#f0c14b] hover:bg-gradient-to-b border border-zinc-400 active:border-yellow-800 active:shadow-habeshaInput flex items-center justify-center gap-2"
+                className="w-full py-1.5 text-sm font-normal rounded-sm bg-gradient-to-t from-[#f7dfa5] to-[#f0c14b] hover:bg-gradient-to-b border border-zinc-400 active:border-yellow-800 active:shadow-habeshaInput flex items-center justify-center gap-2"
               >
                 <GoogleIcon className="text-base" />
                 {currentText.continueWithGoogle}
@@ -283,7 +372,7 @@ const SignIn = () => {
               {language === 'EN' ? 'and' : 'እና'}{' '}
               <span className="text-blue-600">{currentText.privacyNotice}</span>.
             </p>
-            <p className="text-xm text-gray-600 mt-4 cursor-pointer group">
+            <p className="text-xs text-gray-600 mt-4 cursor-pointer group">
               <ArrowRightIcon />
               <span className="text-blue-600 group-hover:text-orange-700 group-hover:underline underline-offset-1">
                 {currentText.needHelp}

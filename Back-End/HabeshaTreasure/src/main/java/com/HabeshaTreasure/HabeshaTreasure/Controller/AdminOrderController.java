@@ -20,6 +20,7 @@ public class AdminOrderController {
     @Autowired
     private OrderService orderService;
 
+
     @GetMapping
     public ResponseEntity<?> getAllOrders() {
         try {
@@ -64,7 +65,6 @@ public class AdminOrderController {
         }
     }
 
-
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(@PathVariable Long id,
                                           @RequestBody Map<String, String> body) {
@@ -92,7 +92,6 @@ public class AdminOrderController {
             return ResponseEntity.internalServerError().body("Failed to update status");
         }
     }
-
     @GetMapping("/{id}/proof")
     public ResponseEntity<?> downloadProof(@PathVariable Long id) {
         try {
@@ -111,5 +110,16 @@ public class AdminOrderController {
             return ResponseEntity.internalServerError().body("Failed to load image");
         }
     }
+
+    @GetMapping("/recent-orders")
+    public ResponseEntity<?> getRecentOrders() {
+        try {
+            return ResponseEntity.ok(orderService.getRecentOrders(3));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to load recent orders");
+        }
+    }
+
 }
 

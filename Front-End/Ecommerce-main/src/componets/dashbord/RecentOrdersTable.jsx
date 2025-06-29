@@ -1,30 +1,101 @@
-// src/components/dashboard/RecentOrdersTable.jsx
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiExternalLink } from 'react-icons/fi';
-// import { useNavigate } from 'react-router-dom'; // If you want to navigate
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';import adminDashboardService from '../../service/adminDashboardService';
 
 const getStatusClass = (status) => {
-    switch (status) {
-        case 'Delivered': return 'bg-green-100 text-green-800';
-        case 'Shipped': return 'bg-blue-100 text-blue-800';
-        case 'Processing': return 'bg-yellow-100 text-yellow-800';
-        case 'Cancelled':
-        case 'Failed':
-             return 'bg-red-100 text-red-800';
-        default: return 'bg-gray-100 text-gray-800';
-    }
+  switch (status) {
+    case 'Delivered': return 'bg-green-100 text-green-800';
+    case 'Shipped': return 'bg-blue-100 text-blue-800';
+    case 'Processing': return 'bg-yellow-100 text-yellow-800';
+    case 'Pending': return 'bg-yellow-100 text-yellow-800';
+    case 'Cancelled': return 'bg-red-100 text-red-800';
+    case 'Rejected': return 'bg-red-100 text-red-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
 };
 
-const RecentOrdersTable = ({ orders }) => {
-  // const navigate = useNavigate();
+const RecentOrdersTable = () => {
+  const navigate = useNavigate();
+  const language = useSelector((state) => state.habesha.language);
+  const USD_TO_ETB_RATE = 150;
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // const handleViewOrder = (orderId) => {
-  //   navigate(`/admin/orders/${orderId}`);
-  // };
+  const formatPrice = (value) => {
+    const price = language === '0' ? value : value * USD_TO_ETB_RATE;
+    return price.toLocaleString(language === '0' ? 'en-US' : 'am-ET', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
-  // const handleViewAllOrders = () => {
-  //   navigate('/admin/orders');
-  // };
+  const statusMap = {
+    PENDING_PAYMENT: 'Pending',
+    PAID: 'Paid',
+    PROCESSING: 'Processing',
+    SHIPPED: 'Shipped',
+    DELIVERED: 'Delivered',
+    CANCELLED: 'Cancelled',
+    REJECTED: 'Rejected',
+  };
+
+  const fetchRecentOrders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await adminDashboardService.getRecentOrders();
+      const normalizedOrders = response.data.map(order => ({
+        id: order.orderId,
+        customer: order.userFullName || 'Unknown',
+        total: formatPrice(order.totalPrice),
+        status: statusMap[order.status] || 'Pending',
+        date: new Date(order.orderedAt).toLocaleDateString(),
+      }));
+      setOrders(normalizedOrders);
+    } catch (err) {
+      console.error("Failed to fetch recent orders:", err);
+      setError(err.response?.data?.message || "Failed to load recent orders.");
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRecentOrders();
+  }, [fetchRecentOrders]);
+
+  const handleViewOrder = (orderId) => {
+    navigate(`/admin/orders/${orderId}`);
+  };
+
+  const handleViewAllOrders = () => {
+    navigate('/admin/orders');
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-lg text-center py-8 text-sm text-gray-500">
+        Loading recent orders...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-lg text-center py-8 text-sm text-red-600">
+        {error}
+        <button
+          onClick={fetchRecentOrders}
+          className="mt-4 px-4 py-2 bg-habesha_blue text-white rounded hover:bg-opacity-90"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (!orders || orders.length === 0) {
     return <p className="text-center py-8 text-sm text-gray-500">No recent orders to display.</p>;
@@ -35,7 +106,7 @@ const RecentOrdersTable = ({ orders }) => {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-700">Recent Orders</h2>
         <button
-        //   onClick={handleViewAllOrders}
+          onClick={handleViewAllOrders}
           className="text-sm text-habesha_blue hover:underline font-medium flex items-center"
         >
           View All Orders <FiExternalLink size={14} className="ml-1" />
@@ -56,7 +127,7 @@ const RecentOrdersTable = ({ orders }) => {
             {orders.map(order => (
               <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                 <td
-                //   onClick={() => handleViewOrder(order.id)}
+                  onClick={() => handleViewOrder(order.id)}
                   className="px-5 py-4 whitespace-nowrap text-sm font-medium text-habesha_blue hover:underline cursor-pointer"
                 >
                   {order.id}

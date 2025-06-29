@@ -1,4 +1,3 @@
-// src/components/orders/OrderFilters.jsx
 import React from 'react';
 import { FiSearch } from 'react-icons/fi';
 
@@ -37,8 +36,9 @@ const OrderFilters = ({
             onChange={onStatusChange}
             className="w-full py-2.5 px-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-habesha_blue focus:border-transparent text-sm"
           >
-            <option value="All">All Statuses</option>
-            {statuses.map(stat => <option key={stat} value={stat}>{stat}</option>)}
+            {statuses.map(stat => (
+              <option key={stat} value={stat}>{stat}</option>
+            ))}
           </select>
         </div>
         <div>
@@ -65,7 +65,6 @@ const OrderFilters = ({
       {selectedOrdersCount > 0 && (
         <div className="pt-3">
           <p className="text-sm text-habesha_blue font-medium">{selectedOrdersCount} order(s) selected.</p>
-          {/* Add bulk action buttons here e.g. Update status for selected */}
         </div>
       )}
     </div>

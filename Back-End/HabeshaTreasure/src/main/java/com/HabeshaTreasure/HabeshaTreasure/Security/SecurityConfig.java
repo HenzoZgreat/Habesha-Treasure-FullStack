@@ -56,7 +56,10 @@ public class SecurityConfig {
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/validate",
-                                "/login/oauth2/code/google"
+                                "/login/oauth2/code/google",
+                                "/api/auth/verify-email",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/products/{id}").permitAll()

@@ -16,7 +16,7 @@ const getOrderStatusIcon = (status) => {
 };
 
 const OrderTableRow = ({ order, isSelected, onSelectOrder, onViewOrderDetails, onUpdateStatus }) => {
-  const availableStatuses = ['Shipped', 'Delivered'];
+  const availableStatuses = ['Select Status', 'Shipped', 'Delivered'];
 
   return (
     <tr className={`hover:bg-gray-50/50 transition-colors ${isSelected ? 'bg-habesha_blue/10' : ''}`}>
@@ -34,7 +34,7 @@ const OrderTableRow = ({ order, isSelected, onSelectOrder, onViewOrderDetails, o
         </button>
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
-        <div className="text-sm text-gray-800">{order.customerName}</div>
+        <div className="text-sm text-gray-800">{order.name}</div>
         <div className="text-xs text-gray-500">{order.email}</div>
       </td>
       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
@@ -66,8 +66,12 @@ const OrderTableRow = ({ order, isSelected, onSelectOrder, onViewOrderDetails, o
           <FiEye size={18} />
         </button>
         <select
-          value={order.status}
-          onChange={(e) => onUpdateStatus(order.id, e.target.value)}
+          value={order.status === 'Shipped' || order.status === 'Delivered' ? order.status : 'Select Status'}
+          onChange={(e) => {
+            if (e.target.value !== 'Select Status') {
+              onUpdateStatus(order.id, e.target.value);
+            }
+          }}
           disabled={!['Paid', 'Shipped'].includes(order.status)}
           className="text-xs p-1.5 border border-gray-300 rounded-md focus:ring-habesha_blue focus:border-habesha_blue shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           title="Update Status"

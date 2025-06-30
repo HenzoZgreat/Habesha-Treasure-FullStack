@@ -1,7 +1,7 @@
 package com.HabeshaTreasure.HabeshaTreasure.Entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,8 +9,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 
-@Data
 @Entity
+@Data
 @Table(name = "users")
 public class User implements UserDetails {
 
@@ -28,6 +28,8 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UsersInfo usersInfo;
 

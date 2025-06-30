@@ -2,6 +2,8 @@ package com.HabeshaTreasure.HabeshaTreasure.Entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +15,7 @@ public class UsersInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
 
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")

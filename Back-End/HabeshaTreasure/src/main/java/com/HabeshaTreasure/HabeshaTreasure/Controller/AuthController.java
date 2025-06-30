@@ -124,23 +124,35 @@ public class AuthController {
     }
 
     @GetMapping("/verify-email")
-    public ResponseEntity<String> verifyEmail(@RequestParam String token) {
-        Optional<VerificationToken> optional = verificationTokenRepo.findByToken(token);
-        if (optional.isEmpty()) return ResponseEntity.badRequest().body("Invalid token");
+    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
+        Optional<VerificationToken> optionalToken = verificationTokenRepo.findByToken(token);
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.badRequest().body("Token is required");
+        }
+        if (optionalToken.isEmpty()) {
+            return ResponseEntity.badRequest().body("Invalid or expired token");
+        }
 
-        VerificationToken verificationToken = optional.get();
+        VerificationToken verificationToken = optionalToken.get();
+
         if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body("Token expired");
+            return ResponseEntity.badRequest().body("Verification token has expired");
         }
 
         User user = verificationToken.getUser();
+        if (user == null || user.getUsersInfo() == null) {
+            return ResponseEntity.badRequest().body("User linked to this token was not found");
+        }
+
         UsersInfo info = user.getUsersInfo();
         info.setEnabled(true);
         userRepo.save(user);
-        verificationTokenRepo.delete(verificationToken);
+
+        verificationTokenRepo.delete(verificationToken); // optional: clean up
 
         return ResponseEntity.ok("Email verified successfully. You can now log in.");
     }
+
 
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> request) {
@@ -172,6 +184,7 @@ public class AuthController {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                     "error", "Failed to reset password."
             ));

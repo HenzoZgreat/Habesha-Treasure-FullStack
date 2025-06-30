@@ -13,30 +13,57 @@ import SalesChartPlaceholder from '../../componets/dashbord/SalesChartPlaceholde
 import LoadingIndicator from '../../componets/common/LoadingIndicator';
 import ErrorDisplay from '../../componets/common/ErrorDisplay';
 
+import Chart from 'chart.js/auto';
+import { Line } from 'react-chartjs-2';
+
+
 const DashboardOverview = () => {
-  const [dashboardData, setDashboardData] = useState(initialDashboardState);
+  const [dashboardData, setDashboardData] = useState({
+    totalRevenue: { value: 0, trend: '0%' },
+    totalOrders: { value: 0, trend: '0%' },
+    newCustomers: { value: 0, trend: '0%' },
+    pendingOrders: { value: 0, trend: '0%' },
+    salesTrendData: { labels: [], datasets: [] },
+    topProducts: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currency, setCurrency] = useState('USD');
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await dashboardService.getDashboardSummary();
+      const response = await dashboardService.getDashboardSummary(currency, new Date().toISOString().split('T')[0], 7);
       setDashboardData(response.data);
     } catch (err) {
-      console.error("Failed to fetch dashboard data:", err);
-      setError("Could not load dashboard data. Please try again later.");
-      setDashboardData(initialDashboardState); // Reset to initial on error
+      console.error('Failed to fetch dashboard data:', err);
+      setError('Could not load dashboard data. Please try again later.');
+      setDashboardData({
+        totalRevenue: { value: 0, trend: '0%' },
+        totalOrders: { value: 0, trend: '0%' },
+        newCustomers: { value: 0, trend: '0%' },
+        pendingOrders: { value: 0, trend: '0%' },
+        salesTrendData: { labels: [], datasets: [] },
+        topProducts: [],
+      });
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependency array, fetchDashboardData itself doesn't change
+  }, [currency]);
 
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  const chartOptions = {
+    responsive: true,
+    plugins: { legend: { position: 'top' }, title: { display: true, text: 'Sales Trends' } },
+  };
+
+  const handleCurrencyToggle = () => {
+    setCurrency(currency === 'USD' ? 'ETB' : 'USD');
+  };
 
   if (loading) {
     return <LoadingIndicator message="Loading Dashboard Data..." fullPage={true} />;
@@ -50,6 +77,12 @@ const DashboardOverview = () => {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-gray-700">Dashboard Overview</h1>
+        <button
+          onClick={handleCurrencyToggle}
+          className="px-4 py-2 bg-habesha_blue text-white rounded hover:bg-opacity-90"
+        >
+          Switch to {currency === 'USD' ? 'ETB' : 'USD'}
+        </button>
       </div>
 
       {/* Stats Cards Row */}
@@ -66,7 +99,7 @@ const DashboardOverview = () => {
           value={dashboardData.totalOrders.value}
           icon={<FiShoppingCart />}
           trend={dashboardData.totalOrders.trend}
-          trendColor={dashboardData.totalOrders.trend?.startsWith('+') ? "text-green-500" : "text-red-500"}
+          trendColor={dashboardData.totalOrders.trend?.startsWith('+') ? 'text-green-500' : 'text-red-500'}
         />
         <StatCard
           title="New Customers"
@@ -79,23 +112,26 @@ const DashboardOverview = () => {
           title="Pending Orders"
           value={dashboardData.pendingOrders.value}
           icon={<FiAlertOctagon />}
-          bgColor="bg-yellow-400" // Example custom color
+          bgColor="bg-yellow-400"
           textColor="text-white"
-          trendColor="text-yellow-100" // Ensure this contrasts with bgColor
+          trendColor="text-yellow-100"
         />
       </div>
 
       {/* Main Content Area - Charts and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <SalesChartPlaceholder chartData={dashboardData.salesTrendData} />
+        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">Sales Trends</h2>
+          <div className="h-72">
+            <Line data={dashboardData.salesTrendData} options={chartOptions} />
+          </div>
+        </div>
 
         <div className="space-y-6">
           <TopProductsList products={dashboardData.topProducts} />
           <QuickLinks />
         </div>
       </div>
-
-      <RecentOrdersTable orders={dashboardData.recentOrders} />
     </div>
   );
 };

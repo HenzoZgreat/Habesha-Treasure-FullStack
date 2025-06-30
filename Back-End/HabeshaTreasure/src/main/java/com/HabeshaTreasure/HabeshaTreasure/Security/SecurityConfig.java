@@ -57,10 +57,10 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/validate",
                                 "/login/oauth2/code/google",
-                                "/api/auth/verify-email",
-                                "/api/auth/forgot-password",
-                                "/api/auth/reset-password"
+                                "/api/auth/verify-email"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/products/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/products/{id}/reviews").permitAll()

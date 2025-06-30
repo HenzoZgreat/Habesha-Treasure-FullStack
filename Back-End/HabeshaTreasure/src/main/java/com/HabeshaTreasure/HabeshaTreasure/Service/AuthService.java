@@ -56,9 +56,12 @@ public class AuthService {
         VerificationToken verificationToken = new VerificationToken(token, givenUser, LocalDateTime.now().plusMinutes(30));
         verificationTokenRepo.save(verificationToken);
 
+
         // Send verification email
-        String link = "http://localhost:8080/api/auth/verify-email?token=" + token;
+        String link = "http://localhost:3000/verify-email?token=" + token;
         emailService.send(givenUser.getEmail(), "Verify Your Email", "Click to verify: " + link);
+
+
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "User registered successfully. Please check your email to verify your account.");
@@ -108,7 +111,7 @@ public class AuthService {
         PasswordResetToken resetToken = new PasswordResetToken(token, user, LocalDateTime.now().plusMinutes(15));
         passwordResetTokenRepo.save(resetToken);
 
-        String link = "http://localhost:5173/reset-password?token=" + token;
+        String link = "http://localhost:3000/reset-password?token=" + token;
         String subject = "Reset your password";
         String body = "Hi " + user.getUsersInfo().getFirstName() + ",\n\n" +
                 "Click the link to reset your password:\n" + link + "\n\n" +
@@ -129,6 +132,10 @@ public class AuthService {
         }
 
         User user = resetToken.getUser();
+        if (user == null) {
+            return "User linked to token not found.";
+        }
+
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         passwordResetTokenRepo.delete(resetToken);

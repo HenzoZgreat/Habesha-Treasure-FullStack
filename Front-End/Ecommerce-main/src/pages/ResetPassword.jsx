@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import api from '../componets/api/api';
 import { useSelector } from 'react-redux';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errNewPassword, setErrNewPassword] = useState('');
+  const [errConfirmPassword, setErrConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
   const language = useSelector((state) => state.habesha.language);
@@ -22,11 +27,14 @@ const ResetPassword = () => {
       newPassword: 'New Password',
       enterNewPassword: 'Enter your new password',
       passwordLength: 'Password must be at least 6 characters',
+      confirmPassword: 'Confirm Password',
+      enterConfirmPassword: 'Confirm your new password',
+      passwordsMismatch: 'Passwords do not match',
       submit: 'Submit',
       returnToHome: 'Return to Home',
       resetSuccess: 'Password reset successful! You can now sign in.',
       resetFailed: 'Failed to reset password. Please try again.',
-      invalidToken: 'Invalid or missing reset token.',
+      invalidToken: 'Invalid or missing reset token. Please request a new reset link.',
       footer: '2025, ReactBd, Inc. or its affiliates',
     },
     AMH: {
@@ -34,20 +42,40 @@ const ResetPassword = () => {
       newPassword: 'አዲስ የይለፍ ቃል',
       enterNewPassword: 'አዲስ የይለፍ ቃልህን አስገባ',
       passwordLength: 'የይለፍ ቃል ቢያንስ 6 ቁምፊዎች መሆን አለበት',
+      confirmPassword: 'የይለፍ ቃልን አረጋግጥ',
+      enterConfirmPassword: 'አዲስ የይለፍ ቃልህን አረጋግጥ',
+      passwordsMismatch: 'የይለፍ ቃላት አይዛመዱም',
       submit: 'አስገባ',
       returnToHome: 'ወደ መነሻ ገፅ ተመለስ',
       resetSuccess: 'የይለፍ ቃል ዳግም ማስጀመር ተሳክቷል! አሁን መግባት ትችላለህ።',
       resetFailed: 'የይለፍ ቃል ዳግም ማስጀመር አልተሳካም። እባክህ እንደገና ሞክር።',
-      invalidToken: 'የተሳሳተ ወይም የማይገኝ ዳግም ማስጀመሪያ ማስመሰያ።',
+      invalidToken: 'የተሳሳተ ወይም የማይገኝ ዳግም ማስጀመሪያ ማስመሰያ። እባክህ አዲስ ዳግም ማስጀመሪያ አገናኝ ጠይቅ።',
       footer: '2025, ReactBd, Inc. ወይም ተባባሪዎቹ',
     },
   };
 
   const currentText = text[language];
 
+  useEffect(() => {
+    if (!token) {
+      setNotification({ message: currentText.invalidToken, type: 'error' });
+      setTimeout(() => navigate('/SignIn'), 3000);
+    }
+  }, [token, navigate, currentText.invalidToken]);
+
   const handleNewPassword = (e) => {
     setNewPassword(e.target.value);
     setErrNewPassword('');
+    if (confirmPassword && e.target.value !== confirmPassword) {
+      setErrConfirmPassword(currentText.passwordsMismatch);
+    } else {
+      setErrConfirmPassword('');
+    }
+  };
+
+  const handleConfirmPassword = (e) => {
+    setConfirmPassword(e.target.value);
+    setErrConfirmPassword(e.target.value !== newPassword ? currentText.passwordsMismatch : '');
   };
 
   const handleResetPassword = async (e) => {
@@ -55,7 +83,7 @@ const ResetPassword = () => {
 
     if (!token) {
       setNotification({ message: currentText.invalidToken, type: 'error' });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => navigate('/SignIn'), 3000);
       return;
     }
 
@@ -67,11 +95,20 @@ const ResetPassword = () => {
       return;
     }
 
+    if (!confirmPassword) {
+      setErrConfirmPassword(currentText.enterConfirmPassword);
+      return;
+    } else if (newPassword !== confirmPassword) {
+      setErrConfirmPassword(currentText.passwordsMismatch);
+      return;
+    }
+
     try {
       await api.post('/auth/reset-password', { token, newPassword });
       setNotification({ message: currentText.resetSuccess, type: 'success' });
-      setTimeout(() => navigate('/signin'), 3000);
+      setTimeout(() => navigate('/SignIn'), 3000);
       setNewPassword('');
+      setConfirmPassword('');
     } catch (error) {
       const msg = error.response?.data?.message || currentText.resetFailed;
       setNotification({ message: msg, type: 'error' });
@@ -125,16 +162,42 @@ const ResetPassword = () => {
               {/* New Password */}
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium pb-2">{currentText.newPassword}</p>
-                <input
-                  onChange={handleNewPassword}
-                  value={newPassword}
-                  className="w-full py-1 border border-zinc-400 px-2 text-base rounded-sm outline-none focus-within:border-[#e77600] focus-within:shadow-habeshaInput duration-100"
-                  type="password"
-                />
+                <div className="relative">
+                  <input
+                    onChange={handleNewPassword}
+                    value={newPassword}
+                    className="w-full py-1 border border-zinc-400 px-2 text-base rounded-sm outline-none focus-within:border-[#e77600] focus-within:shadow-habeshaInput duration-100 pr-10"
+                    type={showPassword ? 'text' : 'password'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-habesha_blue"
+                  >
+                    {showPassword ? <VisibilityOff className="text-lg" /> : <Visibility className="text-lg" />}
+                  </button>
+                </div>
                 {errNewPassword && (
                   <p className="text-red-600 text-xs font-semibold tracking-wide flex items-center gap-2 -mt-1.5">
                     <span className="italic font-titleFont font-semibold text-base">!</span>
                     {errNewPassword}
+                  </p>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium pb-2">{currentText.confirmPassword}</p>
+                <input
+                  onChange={handleConfirmPassword}
+                  value={confirmPassword}
+                  className="w-full py-1 border border-zinc-400 px-2 text-base rounded-sm outline-none focus-within:border-[#e77600] focus-within:shadow-habeshaInput duration-100"
+                  type="password"
+                />
+                {errConfirmPassword && (
+                  <p className="text-red-600 text-xs font-semibold tracking-wide flex items-center gap-2 -mt-1.5">
+                    <span className="italic font-titleFont font-semibold text-base">!</span>
+                    {errConfirmPassword}
                   </p>
                 )}
               </div>
@@ -150,7 +213,7 @@ const ResetPassword = () => {
 
             <p className="text-xs text-black leading-4 mt-4">
               {language === 'EN' ? 'Return to' : 'ወደ'}{' '}
-              <Link to="/signin" className="text-blue-600 hover:text-orange-700 hover:underline">
+              <Link to="/SignIn" className="text-blue-600 hover:text-orange-700 hover:underline">
                 {currentText.signIn}
               </Link>.
             </p>

@@ -16,6 +16,7 @@ import Cart from "./pages/Cart";
 import SignIn from "./pages/SignIn";
 import Regestration from "./pages/Regestration";
 import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import ProductDetails from "./pages/User/ProductDetails";
 import Favorites from "./pages/User/FavoritesPage";
 import UserProfile from "./pages/User/ProfilePage";
@@ -61,6 +62,7 @@ function App() {
         <Route path="/SignIn" element={<SignIn />}></Route>
         <Route path="/Registration" element={<Regestration />}></Route>
         <Route path="/reset-password" element={<ResetPassword />}></Route>
+        <Route path="/verify-email" element={<VerifyEmail />}></Route>
         <Route path="/search" element={<SearchResults />} />
         <Route path="/admin" element={<AdminDashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />

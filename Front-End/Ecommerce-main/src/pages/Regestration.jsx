@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import HomeIcon from '@mui/icons-material/Home';
 import GoogleIcon from '@mui/icons-material/Google';
@@ -6,6 +8,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import HabeshaLogo from '../assets/images/HabeshaLogo.jpeg';
 import api from '../componets/api/api';
 import { useSelector } from 'react-redux';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+
 
 const Registration = () => {
   const [errFirstName, setErrFirstName] = useState("");
@@ -14,6 +19,8 @@ const Registration = () => {
   const [errPhoneNumber, setErrPhoneNumber] = useState("");
   const [errPassword, setErrPassword] = useState("");
   const [errCPassword, setErrCPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -21,11 +28,11 @@ const Registration = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [cPassword, setCPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const language = useSelector((state) => state.habesha.language);
   const navigate = useNavigate();
 
-  // Define bilingual text
   const text = {
     EN: {
       createAccount: 'Create Account',
@@ -56,6 +63,8 @@ const Registration = () => {
       help: 'Help',
       footer: '2025, ReactBd, Inc. or its affiliates',
       returnToHome: 'Return to Home',
+      registrationSuccess: 'Registration successful! Please check your email to verify your account.',
+      registrationFailed: 'Registration failed. Please try again.',
     },
     AMH: {
       createAccount: 'መለያ ፍጠር',
@@ -86,6 +95,8 @@ const Registration = () => {
       help: 'እገዛ',
       footer: '2025, ReactBd, Inc. ወይም ተባባሪዎቹ',
       returnToHome: 'ወደ መነሻ ገፅ ተመለስ',
+      registrationSuccess: 'Registration successful! Please check your email to verify your account.',
+      registrationFailed: 'Registration failed. Please try again.',
     },
   };
 
@@ -126,13 +137,12 @@ const Registration = () => {
   };
 
   const phoneValidation = (phone) => {
-    return String(phone).match(/^\d{10}$/); // Basic validation for 10-digit phone number
+    return String(phone).match(/^\d{10}$/);
   };
 
   const handleRegistration = async (e) => {
     e.preventDefault();
 
-    // Validation
     if (!firstName) setErrFirstName(currentText.enterFirstName);
     if (!lastName) setErrLastName(currentText.enterLastName);
     if (!email) setErrEmail(currentText.enterYourEmail);
@@ -149,11 +159,12 @@ const Registration = () => {
       lastName &&
       emailValidation(email) &&
       phoneValidation(phoneNumber) &&
-      password.length >= 3 &&
+      password.length >= 6 &&
       password === cPassword;
 
     if (!isValid) return;
 
+    setIsLoading(true);
     try {
       const response = await api.post('/auth/register', {
         email,
@@ -170,22 +181,18 @@ const Registration = () => {
         },
       });
 
-      // Store JWT token in localStorage
-      localStorage.setItem('token', response.data.token);
-
-      alert(response.data.message || 'Registration successful. Please sign in.');
+      setMessage({ text: response.data.message || currentText.registrationSuccess, type: 'success' });
       setFirstName('');
       setLastName('');
       setEmail('');
       setPhoneNumber('');
       setPassword('');
       setCPassword('');
-
-      // Redirect to home page
-      navigate('/');
     } catch (error) {
-      const msg = error.response?.data?.message || 'Registration failed';
-      setErrEmail(msg);
+      const msg = error.response?.data?.message || currentText.registrationFailed;
+      setMessage({ text: msg, type: 'error' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -193,8 +200,48 @@ const Registration = () => {
     alert('Google Sign-In functionality will be implemented later.');
   };
 
+  const handleCloseMessage = () => {
+    setMessage(null);
+  };
+
   return (
     <div lang={language === 'EN' ? 'en' : 'am'} className="w-full">
+      {/* Notification */}
+      {message && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300">
+          <div className={`bg-white border-l-4 ${message.type === 'success' ? 'border-green-500' : 'border-red-500'} shadow-2xl rounded-lg p-4 max-w-sm mx-auto`}>
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                {message.type === 'success' ? (
+                  <CheckCircleIcon className="text-green-500 text-xl" />
+                ) : (
+                  <span className="text-red-500 text-xl">⚠</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-habesha_blue">{message.text}</p>
+              </div>
+              <button
+                onClick={handleCloseMessage}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <CloseIcon className="text-sm" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Loader */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-4">
+            <span className="animate-spin h-6 w-6 border-4 border-t-transparent border-habesha_blue rounded-full"></span>
+            <p className="text-lg text-habesha_blue">Processing...</p>
+          </div>
+        </div>
+      )}
+
       <div className="w-full bg-gray-100 pb-10">
         <form className="w-[370px] mx-auto flex flex-col items-center">
           {/* Return to Home Icon */}
@@ -273,12 +320,21 @@ const Registration = () => {
               </div>
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium">{currentText.password}</p>
-                <input
-                  value={password}
-                  onChange={handlePassword}
-                  className="w-full py-1 border border-zinc-400 px-2 text-base rounded-sm outline-none focus-within:border-[#e77600] focus-within:shadow-habeshaInput duration-100"
-                  type="password"
-                />
+                <div className="relative">
+                  <input
+                    value={password}
+                    onChange={handlePassword}
+                    className="w-full py-1 border border-zinc-400 px-2 text-base rounded-sm outline-none focus-within:border-[#e77600] focus-within:shadow-habeshaInput duration-100 pr-10"
+                    type={showPassword ? 'text' : 'password'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-habesha_blue"
+                  >
+                    {showPassword ? <VisibilityOff className="text-lg" /> : <Visibility className="text-lg" />}
+                  </button>
+                </div>
                 {errPassword && (
                   <p className="text-red-600 text-xs font-semibold tracking-wide flex items-center gap-2 -mt-1.5">
                     <span className="italic font-titleFont font-semibold text-base">!</span>
@@ -309,12 +365,13 @@ const Registration = () => {
               <button
                 onClick={handleRegistration}
                 className="w-full py-1.5 text-sm font-normal rounded-sm bg-gradient-to-t from-[#f7dfa5] to-[#f0c14b] hover:bg-gradient-to-b border border-zinc-400 active:border-yellow-800 active:shadow-habeshaInput"
+                disabled={isLoading}
               >
                 {currentText.continue}
               </button>
               <button
                 onClick={handleGoogleSignIn}
-                className="w-full py-1.5 text-sm font-normal rounded-sm bg-gradient-to-t from-[#f7dfa5] to [#f0c14b] hover:bg-gradient-to-b border border-zinc-400 active:border-yellow-800 active:shadow-habeshaInput flex items-center justify-center gap-2"
+                className="w-full py-1.5 text-sm font-normal rounded-sm bg-gradient-to-t from-[#f7dfa5] to-[#f0c14b] hover:bg-gradient-to-b border border-zinc-400 active:border-yellow-800 active:shadow-habeshaInput flex items-center justify-center gap-2"
               >
                 <GoogleIcon className="text-base" />
                 {currentText.continueWithGoogle}

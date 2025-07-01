@@ -86,7 +86,7 @@ const AdminSidebar = ({ isOpen, isExpanded, toggleSidebar, toggleExpansion }) =>
           <FiUsers className="h-5 w-5 flex-shrink-0" />
           {isExpanded && <span className="ml-3 transition-opacity duration-300">Users</span>}
         </NavLink>
-        <NavLink
+        {/* <NavLink
           to="/admin/setting"
           className={getNavLinkClass}
           onClick={() => isOpen && toggleSidebar()}
@@ -94,7 +94,7 @@ const AdminSidebar = ({ isOpen, isExpanded, toggleSidebar, toggleExpansion }) =>
         >
           <FiSettings className="h-5 w-5 flex-shrink-0" />
           {isExpanded && <span className="ml-3 transition-opacity duration-300">Settings</span>}
-        </NavLink>
+        </NavLink> */}
       </nav>
     </aside>
   );

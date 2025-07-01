@@ -111,15 +111,6 @@ public class AdminOrderController {
         }
     }
 
-    @GetMapping("/recent-orders")
-    public ResponseEntity<?> getRecentOrders() {
-        try {
-            return ResponseEntity.ok(orderService.getRecentOrders(3));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to load recent orders");
-        }
-    }
 
 }
 

@@ -4,12 +4,15 @@ import com.HabeshaTreasure.HabeshaTreasure.DTO.AdminDashboard.DashboardSummaryRe
 import com.HabeshaTreasure.HabeshaTreasure.DTO.AdminDashboard.SalesTrendData;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.AdminDashboard.TopProductResponse;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.AdminDashboard.TrendValue;
+import com.HabeshaTreasure.HabeshaTreasure.DTO.AdminOrderResponseDTO;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Orders.Order;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Orders.OrderItem;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.User;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.OrderRepo;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,6 +30,8 @@ public class DashboardService {
     private OrderRepo orderRepository;
     @Autowired
     private UserRepo userRepository;
+    @Autowired
+    private OrderService orderService;
 
     private static final double USD_TO_ETB_RATE = 150.0;
 
@@ -55,7 +60,7 @@ public class DashboardService {
         double totalRevenue = recentOrders.stream().mapToDouble(Order::getTotalPrice).sum();
         long totalOrders = recentOrders.size();
         long newCustomers = recentUsers.size();
-        long pendingOrders = recentOrders.stream().filter(o -> o.getStatus().name().equals("PENDING")).count();
+        long pendingOrders = recentOrders.stream().filter(o -> o.getStatus().name().equals("PENDING_PAYMENT")).count();
 
         double revenueLastPeriod = allOrders.stream()
                 .filter(o -> {
@@ -78,10 +83,18 @@ public class DashboardService {
                 })
                 .count();
 
+        long pendingLastPeriod = allOrders.stream()
+                .filter(o -> {
+                    LocalDate orderDate = o.getOrderedAt().toLocalDate();
+                    return orderDate.isAfter(startDate.minusDays(rangeDays)) && orderDate.isBefore(startDate);
+                })
+                .filter(o -> o.getStatus().name().equals("PENDING_PAYMENT"))
+                .count();
+
         double revenueTrend = calculateTrend(revenueLastPeriod, totalRevenue);
         double ordersTrend = calculateTrend(ordersLastPeriod, totalOrders);
         double usersTrend = calculateTrend(usersLastPeriod, newCustomers);
-        double pendingTrend = 0.0; // Optional
+        double pendingTrend = calculateTrend(pendingLastPeriod, pendingOrders);
 
         if (currency.equalsIgnoreCase("ETB")) {
             totalRevenue *= USD_TO_ETB_RATE;
@@ -149,5 +162,9 @@ public class DashboardService {
                 .sorted((a, b) -> Integer.compare(b.getSales(), a.getSales()))
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+    public List<AdminOrderResponseDTO> getRecentOrders(int count) {
+        return orderService.getRecentOrders(count);
     }
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FiExternalLink } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';import adminDashboardService from '../../service/adminDashboardService';
+import { useSelector } from 'react-redux';
+import adminDashboardService from '../../service/adminDashboardService';
 
 const getStatusClass = (status) => {
   switch (status) {
@@ -15,13 +16,11 @@ const getStatusClass = (status) => {
   }
 };
 
-const RecentOrdersTable = () => {
+const RecentOrdersTable = ({ orders }) => {
+  const [localOrders, setOrders] = useState(orders);
   const navigate = useNavigate();
   const language = useSelector((state) => state.habesha.language);
   const USD_TO_ETB_RATE = 150;
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const formatPrice = (value) => {
     const price = language === '0' ? value : value * USD_TO_ETB_RATE;
@@ -42,29 +41,23 @@ const RecentOrdersTable = () => {
   };
 
   const fetchRecentOrders = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const response = await adminDashboardService.getRecentOrders();
-      const normalizedOrders = response.data.map(order => ({
+      return response.data.map(order => ({
         id: order.orderId,
         customer: order.userFullName || 'Unknown',
         total: formatPrice(order.totalPrice),
         status: statusMap[order.status] || 'Pending',
         date: new Date(order.orderedAt).toLocaleDateString(),
       }));
-      setOrders(normalizedOrders);
     } catch (err) {
       console.error("Failed to fetch recent orders:", err);
-      setError(err.response?.data?.message || "Failed to load recent orders.");
-      setOrders([]);
-    } finally {
-      setLoading(false);
+      return [];
     }
   }, []);
 
   useEffect(() => {
-    fetchRecentOrders();
+    fetchRecentOrders().then(setOrders);
   }, [fetchRecentOrders]);
 
   const handleViewOrder = (orderId) => {
@@ -75,29 +68,11 @@ const RecentOrdersTable = () => {
     navigate('/admin/orders');
   };
 
-  if (loading) {
-    return (
-      <div className="bg-white p-6 rounded-xl shadow-lg text-center py-8 text-sm text-gray-500">
-        Loading recent orders...
-      </div>
-    );
-  }
+  const handleViewCustomer = (customer) => {
+    navigate(`/admin/product-details/${customer.replace(/\s+/g, '-')}`);
+  };
 
-  if (error) {
-    return (
-      <div className="bg-white p-6 rounded-xl shadow-lg text-center py-8 text-sm text-red-600">
-        {error}
-        <button
-          onClick={fetchRecentOrders}
-          className="mt-4 px-4 py-2 bg-habesha_blue text-white rounded hover:bg-opacity-90"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  if (!orders || orders.length === 0) {
+  if (!localOrders || localOrders.length === 0) {
     return <p className="text-center py-8 text-sm text-gray-500">No recent orders to display.</p>;
   }
 
@@ -124,7 +99,7 @@ const RecentOrdersTable = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map(order => (
+            {localOrders.map(order => (
               <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                 <td
                   onClick={() => handleViewOrder(order.id)}
@@ -132,7 +107,12 @@ const RecentOrdersTable = () => {
                 >
                   {order.id}
                 </td>
-                <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">{order.customer}</td>
+                <td
+                  onClick={() => handleViewCustomer(order.customer)}
+                  className="px-5 py-4 whitespace-nowrap text-sm text-habesha_blue hover:underline cursor-pointer"
+                >
+                  {order.customer}
+                </td>
                 <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-600">{order.total}</td>
                 <td className="px-5 py-4 whitespace-nowrap">
                   <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>

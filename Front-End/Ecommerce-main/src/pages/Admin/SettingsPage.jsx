@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FiHome, FiCreditCard, FiTruck, FiBell, FiSliders, FiLoader, FiAlertTriangle } from 'react-icons/fi';
 
-import settingsService, { initialSettings as defaultInitialSettings } from '../../service/settingsService';
+import settingsService from '../../service/settingsService';
 import LoadingIndicator from '../../componets/common/LoadingIndicator';
 import ErrorDisplay from '../../componets/common/ErrorDisplay';
 
@@ -13,23 +13,22 @@ import NotificationSettings from '../../componets/settings/NotificationSettings'
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('storeInfo');
-  const [settings, setSettings] = useState(defaultInitialSettings);
+  const [settings, setSettings] = useState({});
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [savingStates, setSavingStates] = useState({}); // { [sectionKey]: isLoading }
   const [error, setError] = useState(null);
   const [lastSavedTimestamps, setLastSavedTimestamps] = useState({});
-
 
   const fetchSettings = useCallback(async () => {
     setLoadingSettings(true);
     setError(null);
     try {
       const response = await settingsService.getSettings();
-      setSettings(response.data);
+      setSettings(response.data || {});
     } catch (err) {
       console.error("Failed to fetch settings:", err);
       setError("Could not load settings. Please try again.");
-      setSettings(defaultInitialSettings); // Fallback to default
+      setSettings({});
     } finally {
       setLoadingSettings(false);
     }
@@ -43,16 +42,13 @@ const SettingsPage = () => {
     setSavingStates(prev => ({ ...prev, [sectionKey]: true }));
     setError(null); // Clear previous errors specific to save
     try {
-      // Pass the current section's data to the service
       const response = await settingsService.updateSettingsSection(sectionKey, sectionData);
-      // Optimistically update the main settings state or refetch specific section
-      setSettings(prev => ({ ...prev, [sectionKey]: response.data.settings || sectionData }));
+      setSettings(prev => ({ ...prev, [sectionKey]: response.data.settings ? response.data.settings[sectionKey] : sectionData }));
       setLastSavedTimestamps(prev => ({...prev, [sectionKey]: Date.now()}));
       alert(`${sectionKey.replace(/([A-Z])/g, ' $1').trim()} settings saved successfully!`); // Or use a toast notification
     } catch (err) {
       console.error(`Failed to save ${sectionKey} settings:`, err);
       setError(`Failed to save ${sectionKey.replace(/([A-Z])/g, ' $1').trim()} settings. ${err.message || ''}`);
-      // Optionally, revert optimistic update or show specific error for the section
     } finally {
       setSavingStates(prev => ({ ...prev, [sectionKey]: false }));
     }
@@ -60,7 +56,7 @@ const SettingsPage = () => {
 
   const tabs = [
     { id: 'storeInfo', label: 'Store Information', icon: <FiHome />, component: StoreInfoSettings },
-    { id: 'payment', label: 'Payment Gateways', icon: <FiCreditCard />, component: PaymentSettings },
+    { id: 'payment', label: 'Payment Details', icon: <FiCreditCard />, component: PaymentSettings },
     { id: 'shipping', label: 'Shipping', icon: <FiTruck />, component: ShippingSettings },
     { id: 'notifications', label: 'Notifications', icon: <FiBell />, component: NotificationSettings },
   ];
@@ -81,11 +77,10 @@ const SettingsPage = () => {
 
     return (
       <TabComponent
-        key={sectionKey} // Important for re-mount and state reset if needed
-        initialData={settings[sectionKey] || defaultInitialSettings[sectionKey]}
-        // Pass merged currency from storeInfo to shipping settings for display
-        initialCurrency={sectionKey === 'shipping' ? settings.storeInfo?.currency : undefined}
-        onSave={handleSaveSection} // Now this is the unified save handler
+        key={sectionKey}
+        initialData={settings[sectionKey] || {}}
+        initialCurrency={sectionKey === 'shipping' ? settings.storeInfo?.currency || '' : undefined}
+        onSave={handleSaveSection}
         isLoading={savingStates[sectionKey] || false}
         sectionKey={sectionKey}
         lastSaved={lastSavedTimestamps[sectionKey]}
@@ -101,9 +96,7 @@ const SettingsPage = () => {
         </h1>
       </div>
       
-      {/* Display global error for saving if any */}
       {error && !loadingSettings && <ErrorDisplay details={error} message="An error occurred" />}
-
 
       <div className="lg:flex lg:gap-x-6">
         <nav className="lg:w-1/4 xl:w-1/5 space-y-1 mb-6 lg:mb-0">

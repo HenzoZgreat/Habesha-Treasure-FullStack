@@ -67,7 +67,7 @@ export default function Notification() {
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 5000);
+    const interval = setInterval(fetchNotifications, 20000);
     return () => clearInterval(interval);
   }, []);
 

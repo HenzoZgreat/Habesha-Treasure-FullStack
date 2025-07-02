@@ -93,4 +93,15 @@ public class ProductsAdminController {
     public ResponseEntity<List<Products>> getProductsByStatus(@PathVariable String status) {
         return ResponseEntity.ok(productsService.getProductsByStatus(status));
     }
+
+    @GetMapping("/distinct/categories")
+    public ResponseEntity<List<String>> getDistinctCategories() {
+        return ResponseEntity.ok(productsService.getDistinctCategories());
+    }
+
+    @GetMapping("/distinct/statuses")
+    public ResponseEntity<List<String>> getDistinctStatuses() {
+        return ResponseEntity.ok(productsService.getDistinctStatuses());
+    }
+
 }

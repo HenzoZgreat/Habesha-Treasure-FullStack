@@ -45,8 +45,6 @@ public class ProductsService {
 
     }
 
-
-
     public List<Products> getAllProducts() {
         return productsRepo.findAll();
     }
@@ -56,7 +54,6 @@ public class ProductsService {
                 .orElseThrow(() -> new NoSuchElementException("Product not found"));
     }
 
-    
     public void createProduct(ProductRequestDTO dto) {
         Products product = mapToProduct(dto);
         product.setDateAdded(LocalDate.now());
@@ -68,7 +65,6 @@ public class ProductsService {
 
     }
 
-    
     public void updateProduct(Integer id, ProductRequestDTO dto) {
         Products product = getProductById(id);
         product.setName(dto.getName());
@@ -84,7 +80,6 @@ public class ProductsService {
 
         notificationService.createNotification("Product updated: " + product.getName(), NotificationType.PRODUCT, null);
     }
-
 
     @Transactional
     public void deleteProduct(Integer id) {
@@ -119,18 +114,15 @@ public class ProductsService {
         }
     }
 
-    
     public int getFavoritesCount(Integer id) {
         return getProductById(id).getFavorites();
     }
 
-    
     public void incrementFavorites(Integer id) {
         Products product = getProductById(id);
         product.setFavorites(product.getFavorites() + 1);
         productsRepo.save(product);
     }
-
     
     public void decrementFavorites(Integer id) {
         Products product = getProductById(id);
@@ -154,15 +146,22 @@ public class ProductsService {
         productsRepo.save(product);
     }
 
-
     public List<Products> getFeaturedProducts() {
         return productsRepo.findByIsFeaturedTrue();
     }
 
-    
     public List<Products> getProductsByStatus(String status) {
         return productsRepo.findByStatusIgnoreCase(status);
     }
+
+    public List<String> getDistinctCategories() {
+        return productsRepo.findDistinctCategories();
+    }
+
+    public List<String> getDistinctStatuses() {
+        return productsRepo.findDistinctStatuses();
+    }
+
 
     private Products mapToProduct(ProductRequestDTO dto) {
         Products p = new Products();

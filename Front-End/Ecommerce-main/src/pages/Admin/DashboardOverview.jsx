@@ -102,7 +102,7 @@ const DashboardOverview = () => {
   }
 
   return (
-    <div className="space-y-8 px-4 sm:px-6 lg:px-8">
+    <div className="space-y-8 px-4 sm:px-0 lg:px-8">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-gray-700">Dashboard Overview</h1>
         <button

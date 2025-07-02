@@ -35,6 +35,8 @@ import OrderDetails from "./pages/Admin/Orders/OrderDetails";
 import EditUser from "./pages/Admin/EditUser";
 import AddUser from "./pages/Admin/AddUser";
 
+import AdminNotifications from "./pages/Admin/Notification";
+
 const Layout = () => {
   return (
     <div>
@@ -64,6 +66,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />}></Route>
         <Route path="/verify-email" element={<VerifyEmail />}></Route>
         <Route path="/search" element={<SearchResults />} />
+
         <Route path="/admin" element={<AdminDashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<DashboardOverview />} />
@@ -76,6 +79,8 @@ function App() {
           <Route path="users/add" element={<AddUser />} />
           <Route path="setting" element={<SettingsPage />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="notifications" element={<AdminNotifications />} />
+
         </Route>
       </Route>
     )

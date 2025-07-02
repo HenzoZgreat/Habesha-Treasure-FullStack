@@ -3,6 +3,7 @@ package com.HabeshaTreasure.HabeshaTreasure.Service;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.UserProfileUpdateDTO;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.UserRequestDTO;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.UserResponseDTO;
+import com.HabeshaTreasure.HabeshaTreasure.Entity.NotificationType;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Role;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.User;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.UsersInfo;
@@ -23,12 +24,19 @@ public class UserService {
 
     @Autowired
     private UserRepo userRepository;
-
     @Autowired
     private UsersInfoRepo usersInfoRepository;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private NotificationService notificationService;
+
+
+    public User findByEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) throw new RuntimeException("User not found");
+        return user;
+    }
 
     public UserResponseDTO getUserById(Long userId) {
         User user = userRepository.findById(userId)
@@ -103,6 +111,9 @@ public class UserService {
 
         userRepository.save(user);
         usersInfoRepository.save(info);
+
+        notificationService.createNotification("User updated: " + user.getEmail(), NotificationType.USER, null);
+
     }
 
     public void deleteUser(Long userId) {
@@ -116,6 +127,9 @@ public class UserService {
         }
 
         userRepository.delete(user); // Then parent
+
+        notificationService.createNotification("User deleted: " + user.getEmail(), NotificationType.USER, null);
+
     }
 
     public void createUser(UserRequestDTO dto) {
@@ -152,6 +166,9 @@ public class UserService {
         user.setUsersInfo(info); // link back
 
         userRepository.save(user); // saves both due to cascade
+
+        notificationService.createNotification("New user created: " + user.getEmail(), NotificationType.USER, null);
+
     }
 
     //===================================================================
@@ -167,6 +184,9 @@ public class UserService {
         if (dto.getRegion() != null) info.setRegion(dto.getRegion());
 
         usersInfoRepository.save(info); // repo already injected
+
+        notificationService.createNotification("Profile updated: " + user.getEmail(), NotificationType.USER, user);
+
     }
 
 }

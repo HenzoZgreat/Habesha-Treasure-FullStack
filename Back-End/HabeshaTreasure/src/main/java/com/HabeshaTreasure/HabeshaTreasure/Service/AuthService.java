@@ -33,6 +33,8 @@ public class AuthService {
     private EmailService emailService;
     @Autowired
     private PasswordResetTokenRepository passwordResetTokenRepo;
+    @Autowired
+    private NotificationService notificationService;
 
 
 
@@ -51,6 +53,9 @@ public class AuthService {
 
         userRepository.save(givenUser);
 
+        notificationService.createNotification("New user registered: " + givenUser.getEmail(), NotificationType.USER, null);
+
+
         // Generate email verification token
         String token = UUID.randomUUID().toString();
         VerificationToken verificationToken = new VerificationToken(token, givenUser, LocalDateTime.now().plusMinutes(30));
@@ -65,6 +70,7 @@ public class AuthService {
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "User registered successfully. Please check your email to verify your account.");
+
         return response;
     }
 

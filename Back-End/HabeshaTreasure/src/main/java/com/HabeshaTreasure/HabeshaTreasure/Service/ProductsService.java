@@ -1,6 +1,7 @@
 package com.HabeshaTreasure.HabeshaTreasure.Service;
 
 import com.HabeshaTreasure.HabeshaTreasure.DTO.ProductRequestDTO;
+import com.HabeshaTreasure.HabeshaTreasure.Entity.NotificationType;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Products;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.FavoriteProductRepo;
 import com.HabeshaTreasure.HabeshaTreasure.Repository.ProductsRepo;
@@ -24,6 +25,8 @@ public class ProductsService {
     private FavoriteProductRepo favoriteRepo;
     @Autowired
     private ReviewRepo reviewRepo;
+    @Autowired
+    private NotificationService notificationService;
 
 
     public void updateProductStatusByStock(Products product) {
@@ -35,6 +38,11 @@ public class ProductsService {
         };
 
         product.setStatus(status);
+
+        if (status.equals("Low Stock")) {
+            notificationService.createNotification("Low stock alert: " + product.getName(), NotificationType.STOCK, null);
+        }
+
     }
 
 
@@ -54,6 +62,10 @@ public class ProductsService {
         product.setDateAdded(LocalDate.now());
         product.setFavorites(0);
         productsRepo.save(product);
+
+        notificationService.createNotification("New product added: " + product.getName(), NotificationType.PRODUCT, null);
+
+
     }
 
     
@@ -69,6 +81,8 @@ public class ProductsService {
         product.setDescriptionAm(dto.getDescriptionAm());
         product.setIsFeatured(dto.getIsFeatured());
         productsRepo.save(product);
+
+        notificationService.createNotification("Product updated: " + product.getName(), NotificationType.PRODUCT, null);
     }
 
 
@@ -81,6 +95,8 @@ public class ProductsService {
         reviewRepo.deleteByProduct(product);
 
         productsRepo.delete(product);
+
+        notificationService.createNotification("Product deleted: " + product.getName(), NotificationType.PRODUCT, null);
     }
 
     @Transactional
@@ -97,6 +113,10 @@ public class ProductsService {
         }
 
         productsRepo.deleteAll(productsToDelete);
+
+        for (Products product : productsToDelete) {
+            notificationService.createNotification("Product deleted: " + product.getName(), NotificationType.PRODUCT, null);
+        }
     }
 
     

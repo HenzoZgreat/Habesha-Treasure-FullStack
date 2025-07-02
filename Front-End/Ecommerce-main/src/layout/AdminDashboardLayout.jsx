@@ -37,7 +37,8 @@ const AdminDashboardLayout = () => {
   }, [navigate]);
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+    console.log('Toggle Sidebar clicked, isSidebarOpen:', !isSidebarOpen); // Debug log
+    setIsSidebarOpen(prev => !prev);
   };
 
   const toggleSidebarExpansion = () => {
@@ -54,7 +55,7 @@ const AdminDashboardLayout = () => {
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <AdminHeader toggleSidebar={toggleSidebar} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-3">
           <Outlet />
         </main>
       </div>

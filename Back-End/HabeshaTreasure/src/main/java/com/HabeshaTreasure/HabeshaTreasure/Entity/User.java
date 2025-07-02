@@ -1,5 +1,6 @@
 package com.HabeshaTreasure.HabeshaTreasure.Entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,6 +32,7 @@ public class User implements UserDetails {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private UsersInfo usersInfo;
 
     @Override

@@ -4,6 +4,7 @@ import com.HabeshaTreasure.HabeshaTreasure.DTO.AdminOrderResponseDTO;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.OrderItemDTO;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.UserOrderResponseDTO;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.CartItem;
+import com.HabeshaTreasure.HabeshaTreasure.Entity.NotificationType;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Orders.Order;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Orders.OrderItem;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Orders.OrderStatus;
@@ -38,6 +39,9 @@ public class OrderService {
     private final CartItemRepo cartRepo;
     @Autowired
     private final ProductsService productsService;
+    @Autowired
+    private NotificationService notificationService;
+
 
 
     @Transactional
@@ -105,6 +109,8 @@ public class OrderService {
 
         orderRepo.save(order);
         cartRepo.deleteByUser(user);
+
+        notificationService.createNotification("Order placed by " + user.getEmail(), NotificationType.ORDER, user);
 
         return order.getId();
     }

@@ -10,6 +10,7 @@ import { addToCart } from '../../redux/HabeshaSlice';
 import { v4 as uuidv4 } from 'uuid';
 import userProductService from '../../service/userProductService';
 import CartService from '../../service/CartService';
+import UserSettingsService from '../../service/UserSettingsService';
 import { motion } from 'framer-motion';
 
 const Product = () => {
@@ -23,6 +24,7 @@ const Product = () => {
   const [error, setError] = useState(null);
   const [favorites, setFavorites] = useState({});
   const [notification, setNotification] = useState(null);
+  const [exchangeRate, setExchangeRate] = useState(150); // Default value
 
   const text = {
     EN: {
@@ -52,10 +54,9 @@ const Product = () => {
   };
 
   const currentText = text[language];
-  const USD_TO_ETB_RATE = 150;
 
   const formatPrice = (price) => {
-    const value = language === 'EN' ? price : price * USD_TO_ETB_RATE;
+    const value = language === 'EN' ? price : price * exchangeRate;
     return value.toLocaleString(language === 'AMH' ? 'am-ET' : 'en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -65,7 +66,7 @@ const Product = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      setError(null); // Clear previous errors
+      setError(null);
       const response = await userProductService.getProducts();
       setProducts(response.data);
       const token = localStorage.getItem('token');
@@ -103,6 +104,16 @@ const Product = () => {
 
   useEffect(() => {
     fetchProducts();
+    const fetchSettings = async () => {
+      try {
+        const response = await UserSettingsService.getSettings();
+        setExchangeRate(response.data.storeInfo.exchangeRate || 150);
+      } catch (err) {
+        console.error('Failed to fetch settings:', err);
+        setExchangeRate(150); // Fallback to default
+      }
+    };
+    fetchSettings();
   }, []);
 
   const handleAddToCart = async (item) => {

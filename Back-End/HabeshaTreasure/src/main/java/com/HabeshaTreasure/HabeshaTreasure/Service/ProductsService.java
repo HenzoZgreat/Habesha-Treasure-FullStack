@@ -3,9 +3,7 @@ package com.HabeshaTreasure.HabeshaTreasure.Service;
 import com.HabeshaTreasure.HabeshaTreasure.DTO.ProductRequestDTO;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.NotificationType;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Products;
-import com.HabeshaTreasure.HabeshaTreasure.Repository.FavoriteProductRepo;
-import com.HabeshaTreasure.HabeshaTreasure.Repository.ProductsRepo;
-import com.HabeshaTreasure.HabeshaTreasure.Repository.ReviewRepo;
+import com.HabeshaTreasure.HabeshaTreasure.Repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +25,14 @@ public class ProductsService {
     private ReviewRepo reviewRepo;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private CartItemRepo cartItemRepository;
+    @Autowired
+    private OrderRepo orderRepository;
+    @Autowired
+    private OrderItemRepo orderItemRepository;
+    @Autowired
+    private NotificationRepository notificationRepository;
 
 
     public void updateProductStatusByStock(Products product) {
@@ -82,17 +88,30 @@ public class ProductsService {
     }
 
     @Transactional
-    public void deleteProduct(Integer id) {
-        Products product = getProductById(id);
+    public void deleteProduct(Integer productId) {
+        Products product = productsRepo.findById(productId)
+                .orElseThrow(() -> new NoSuchElementException("Product not found"));
 
-        cartService.deleteItemsByProduct(product);
-        favoriteRepo.deleteByProduct(product);
+        // 🧹 1. Delete order items by productId (primitive)
+        orderItemRepository.deleteByProductId(productId);
+
+        // 🧹 2. Delete reviews for this product
         reviewRepo.deleteByProduct(product);
 
+        // 🧹 3. Delete favorite_products entries for this product
+        favoriteRepo.deleteByProduct(product);
+
+        // 🧹 4. Delete the product itself
         productsRepo.delete(product);
 
-        notificationService.createNotification("Product deleted: " + product.getName(), NotificationType.PRODUCT, null);
+        // 🔔 Notify
+        notificationService.createNotification(
+                "Product deleted: " + product.getName(),
+                NotificationType.PRODUCT,
+                null
+        );
     }
+
 
     @Transactional
     public void deleteMultipleProducts(List<Integer> ids) {

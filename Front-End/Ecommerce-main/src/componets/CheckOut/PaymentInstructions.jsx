@@ -3,10 +3,12 @@
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance"
 import ContentCopyIcon from "@mui/icons-material/ContentCopy"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
-import { useState } from "react"
+import { useState, useEffect } from "react";
+import UserSettingsService from "../../service/UserSettingsService"
 
 const PaymentInstructions = ({ bankDetails, total, language, onNext, formatPrice }) => {
   const [copiedField, setCopiedField] = useState("")
+  const [settingsBankDetails, setSettingsBankDetails] = useState(null)
 
   const text = {
     EN: {
@@ -59,6 +61,19 @@ const PaymentInstructions = ({ bankDetails, total, language, onNext, formatPrice
     setTimeout(() => setCopiedField(""), 2000)
   }
 
+  useEffect(() => {
+    const fetchBankDetails = async () => {
+      try {
+        const response = await UserSettingsService.getSettings();
+        setSettingsBankDetails(response.data.payment || {});
+      } catch (err) {
+        console.error('Failed to fetch bank details:', err);
+        setSettingsBankDetails({});
+      }
+    };
+    fetchBankDetails();
+  }, []);
+
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-habesha_blue/20">
       <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
@@ -93,10 +108,10 @@ const PaymentInstructions = ({ bankDetails, total, language, onNext, formatPrice
         <h3 className="text-lg font-semibold text-gray-800 mb-4">{currentText.bankDetails}</h3>
         <div className="space-y-4">
           {[
-            { label: currentText.accountNumber, value: bankDetails.accountNumber, key: "account" },
-            { label: currentText.bankName, value: bankDetails.bankName, key: "bank" },
-            { label: currentText.accountHolder, value: bankDetails.accountHolder, key: "holder" },
-            { label: currentText.branch, value: bankDetails.branch, key: "branch" },
+            { label: currentText.accountNumber, value: settingsBankDetails?.accountNumber || bankDetails.accountNumber, key: "account" },
+            { label: currentText.bankName, value: settingsBankDetails?.bankName || bankDetails.bankName, key: "bank" },
+            { label: currentText.accountHolder, value: settingsBankDetails?.accountName || bankDetails.accountHolder, key: "holder" },
+            { label: currentText.branch, value: settingsBankDetails?.branch || bankDetails.branch, key: "branch" },
           ].map((detail) => (
             <div key={detail.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
               <div>

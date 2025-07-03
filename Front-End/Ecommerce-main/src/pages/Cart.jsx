@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import CartService from '../service/CartService';
 import PersonIcon from "@mui/icons-material/Person";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
+import UserSettingsService from '../service/UserSettingsService';
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -20,6 +21,8 @@ const Cart = () => {
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [exchangeRate, setExchangeRate] = useState(120); // Default value
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(1000); // Default value
 
   const text = {
     EN: {
@@ -49,7 +52,7 @@ const Cart = () => {
       qty: 'ብዛት',
       deleteItem: 'እቃ ሰርዝ',
       clearCart: 'ጋሪ አጽዳ',
-      freeShipping: 'ትዕዛዝህ ለነጻ መላኪያ ተስማሚ ነው። ይህን አማራጭ በመክፈቻ ጊዜ ምረጥ። ዝርዝሮችን ተመልከት...',
+      freeShipping: 'ትዕዛዝህ ለነፃ መላኪያ ተስማሚ ነው። ይህን አማራጭ በመክፈቻ ጊዜ ምረጥ። ዝርዝሮችን ተመልከት...',
       total: 'ጠቅላላ',
       proceedToPay: 'መክፈል ቀጥል',
       emptyCart: 'ጋሪህ ባዶ ነው',
@@ -65,17 +68,16 @@ const Cart = () => {
   };
 
   const currentText = text[language];
-  const USD_TO_ETB_RATE = 120;
 
   const getDisplayPrice = useCallback(
     (price) => {
-      const value = language === 'EN' ? price : price * USD_TO_ETB_RATE;
+      const value = language === 'EN' ? price : price * exchangeRate;
       return value.toLocaleString(language === 'AMH' ? 'am-ET' : 'en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
     },
-    [language]
+    [language, exchangeRate]
   );
 
   const fetchCart = async () => {
@@ -105,6 +107,18 @@ const Cart = () => {
     } else {
       setLoading(false);
     }
+    const fetchSettings = async () => {
+      try {
+        const response = await UserSettingsService.getSettings();
+        setExchangeRate(response.data.storeInfo.exchangeRate || 120);
+        setFreeShippingThreshold(response.data.shipping.freeShippingThreshold || 1000);
+      } catch (err) {
+        console.error('Failed to fetch settings:', err);
+        setExchangeRate(120); // Fallback to default
+        setFreeShippingThreshold(1000); // Fallback to default
+      }
+    };
+    fetchSettings();
   }, []);
 
   useEffect(() => {
@@ -316,10 +330,18 @@ const Cart = () => {
             </div>
           </div>
           <div className="w-full lg:w-80 bg-white rounded-lg shadow-sm p-4 sm:p-6 flex-shrink-0 sticky bottom-0 lg:static">
-            <p className="flex gap-2 items-start text-xs sm:text-sm text-gray-600 mb-4">
-              <CheckCircleIcon className="text-green-500 text-base sm:text-lg" />
-              {currentText.freeShipping}
-            </p>
+            {totalPrice && parseFloat(totalPrice.replace(/[^0-9.-]+/g,"")) < freeShippingThreshold && (
+              <p className="flex gap-2 items-start text-xs sm:text-sm text-gray-600 mb-4">
+                <span className="text-red-500">⚠</span>
+                Add {getDisplayPrice((freeShippingThreshold - parseFloat(totalPrice.replace(/[^0-9.-]+/g,"")))/exchangeRate)} more to qualify for free shipping.
+              </p>
+            )}
+            {totalPrice && parseFloat(totalPrice.replace(/[^0-9.-]+/g,"")) >= freeShippingThreshold && (
+              <p className="flex gap-2 items-start text-xs sm:text-sm text-gray-600 mb-4">
+                <CheckCircleIcon className="text-green-500 text-base sm:text-lg" />
+                {currentText.freeShipping}
+              </p>
+            )}
             <p className="flex items-center justify-between text-sm sm:text-base font-semibold mb-4">
               {currentText.total}
               <span className="text-base sm:text-lg font-bold">
@@ -342,16 +364,16 @@ const Cart = () => {
           transition={{ delay: 0.5, duration: 0.5 }}
           className="flex flex-col items-center gap-4 py-10 text-center px-4"
         >
-          <img className="w-40 sm:w-60 rounded-lg" src={emptyCart} alt="empty cart" />
-          <h1 className="font-titleFont text-lg sm:text-xl font-bold">{currentText.emptyCart}</h1>
-          <p className="text-xs sm:text-sm text-gray-600 max-w-xs">{currentText.emptyCartMessage}</p>
-          <Link to="/">
-            <button
-              className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-habesha_yellow hover:bg-yellow-500 text-habesha_blue font-semibold rounded-lg text-sm sm:text-base"
-            >
-              {currentText.continueShopping}
-            </button>
-          </Link>
+          <img src={emptyCart} alt="Empty Cart" className="w-40 h-40 object-contain" />
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">{currentText.emptyCart}</h2>
+          <p className="text-sm sm:text-base text-gray-600 max-w-md">{currentText.emptyCartMessage}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="mt-4 bg-habesha_yellow hover:bg-yellow-500 text-habesha_blue font-semibold py-2 px-6 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <ShoppingBagIcon />
+            {currentText.continueShopping}
+          </button>
         </motion.div>
       )}
     </div>

@@ -435,7 +435,7 @@ const Header = () => {
         )}
       </div>
 
-      <HeaderBottom />
+      {/* <HeaderBottom /> */}
     </div>
   )
 }

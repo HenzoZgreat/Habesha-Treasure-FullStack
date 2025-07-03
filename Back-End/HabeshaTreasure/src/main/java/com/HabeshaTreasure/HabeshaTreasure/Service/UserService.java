@@ -7,8 +7,8 @@ import com.HabeshaTreasure.HabeshaTreasure.Entity.NotificationType;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.Role;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.User;
 import com.HabeshaTreasure.HabeshaTreasure.Entity.UsersInfo;
-import com.HabeshaTreasure.HabeshaTreasure.Repository.UserRepo;
-import com.HabeshaTreasure.HabeshaTreasure.Repository.UsersInfoRepo;
+import com.HabeshaTreasure.HabeshaTreasure.Repository.*;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,6 +30,18 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private VerificationTokenRepository verificationTokenRepository;
+    @Autowired
+    private ReviewRepo reviewRepository;
+    @Autowired
+    private CartItemRepo cartItemRepository;
+    @Autowired
+    private OrderRepo orderRepository;
+    @Autowired
+    private NotificationRepository notificationRepository;
+    @Autowired
+    private FavoriteProductRepo favoriteProductRepository;
 
 
     public User findByEmail(String email) {
@@ -116,21 +128,44 @@ public class UserService {
 
     }
 
+    @Transactional
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
-        UsersInfo info = usersInfoRepository.findByUserId(userId);
+        // 🧹 1. Delete verification token
+        verificationTokenRepository.deleteByUser(user);
 
+        // 🧹 2. Delete reviews
+        reviewRepository.deleteByUser(user);
+        favoriteProductRepository.deleteByUser(user);
+
+        // 🧹 3. Delete cart items
+        cartItemRepository.deleteByUser(user);
+
+        // 🧹 4. Delete orders (and order items because of Cascade)
+        orderRepository.deleteByUser(user);
+
+        // 🧹 5. Delete notifications related to user
+        notificationRepository.deleteByUser(user); // Only if user-linked notifications exist
+
+        // 🧹 6. Delete users_info
+        UsersInfo info = usersInfoRepository.findByUserId(userId);
         if (info != null) {
-            usersInfoRepository.delete(info); // Delete child first
+            usersInfoRepository.delete(info);
         }
 
-        userRepository.delete(user); // Then parent
+        // 🧹 7. Delete user
+        userRepository.delete(user);
 
-        notificationService.createNotification("User deleted: " + user.getEmail(), NotificationType.USER, null);
-
+        // 🔔 Notify
+        notificationService.createNotification(
+                "User deleted: " + user.getEmail(),
+                NotificationType.USER,
+                null
+        );
     }
+
 
     public void createUser(UserRequestDTO dto) {
         if (userRepository.findByEmail(dto.getEmail()) != null) {

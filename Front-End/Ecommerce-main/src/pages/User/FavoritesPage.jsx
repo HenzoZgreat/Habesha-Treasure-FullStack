@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
@@ -16,6 +14,7 @@ import CloseIcon from "@mui/icons-material/Close"
 import userProductService from "../../service/userProductService"
 import CartService from "../../service/CartService"
 import { addToCart } from "../../redux/HabeshaSlice"
+import UserSettingsService from "../../service/UserSettingsService"
 
 const FavoritesPage = () => {
   const [favorites, setFavorites] = useState([])
@@ -26,6 +25,7 @@ const FavoritesPage = () => {
   const language = useSelector((state) => state.habesha.language)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const [exchangeRate, setExchangeRate] = useState(150); // Default value
 
   const text = {
     EN: {
@@ -59,7 +59,7 @@ const FavoritesPage = () => {
       outOfStock: "ከክምችት ውጭ",
       reviews: "ግምገማዎች",
       loading: "ተወዳጆችዎን በመጫን ላይ...",
-      error: "ተወዳጆችን መጫን አልተቻለም",
+      error: "ተወዳጆችን መጫን አልተሳካም",
       retry: "እንደገና ሞክር",
       backToProducts: "ወደ ምርቶች ተመለስ",
       notLoggedIn: "ተወዳጆችዎን ለማየት እባክዎ ይግቡ",
@@ -73,27 +73,37 @@ const FavoritesPage = () => {
   const currentText = text[language]
   const USD_TO_ETB_RATE = 150
 
-  useEffect(() => {
-    fetchFavorites()
-  }, [])
-
   const fetchFavorites = async () => {
-    try {
-      setLoading(true)
-      const token = localStorage.getItem("token")
-      if (!token) {
+      try {
+        setLoading(true)
+        const token = localStorage.getItem("token")
+        if (!token) {
+          setLoading(false)
+          return
+        }
+        const response = await userProductService.getFavorites()
+        setFavorites(Array.isArray(response.data) ? response.data : [])
         setLoading(false)
-        return
+      } catch (error) {
+        console.error("Error fetching favorites:", error)
+        setError(error.response?.data?.message || currentText.error)
+        setLoading(false)
       }
-      const response = await userProductService.getFavorites()
-      setFavorites(Array.isArray(response.data) ? response.data : [])
-      setLoading(false)
-    } catch (error) {
-      console.error("Error fetching favorites:", error)
-      setError(error.response?.data?.message || currentText.error)
-      setLoading(false)
     }
-  }
+
+  useEffect(() => {
+    fetchFavorites();
+    const fetchSettings = async () => {
+      try {
+        const response = await UserSettingsService.getSettings();
+        setExchangeRate(response.data.storeInfo.exchangeRate || 150);
+      } catch (err) {
+        console.error('Failed to fetch settings:', err);
+        setExchangeRate(150); // Fallback to default
+      }
+    };
+    fetchSettings();
+  }, [])
 
   const removeFromFavorites = async (productId) => {
     try {
@@ -140,7 +150,7 @@ const FavoritesPage = () => {
   }
 
   const formatPrice = (price) => {
-    const value = language === "EN" ? price : price * USD_TO_ETB_RATE
+    const value = language === "EN" ? price : price * exchangeRate
     return value.toLocaleString(language === "AMH" ? 'am-ET' : 'en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -209,7 +219,10 @@ const FavoritesPage = () => {
           </div>
           <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">{error}</h2>
           <button
-            onClick={fetchFavorites}
+            onClick={() => {
+              setError(null);
+              fetchFavorites();
+            }}
             className="bg-habesha_blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
             {currentText.retry}

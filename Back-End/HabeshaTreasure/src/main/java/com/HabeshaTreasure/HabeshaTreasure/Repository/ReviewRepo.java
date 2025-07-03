@@ -14,7 +14,7 @@ public interface ReviewRepo extends JpaRepository<Review, Long> {
     Optional<Review> findByUserAndProduct(User user, Products product);
     List<Review> findByProduct(Products product);
     void deleteByUserAndProduct(User user, Products product);
-
+    void deleteByUser(User user);
     void deleteByProduct(Products product);
 
 }

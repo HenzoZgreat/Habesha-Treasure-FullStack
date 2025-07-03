@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface OrderItemRepo extends JpaRepository<OrderItem, Long> {
     List<OrderItem> findByOrder(Order order);
+    void deleteByProductId(Integer productId);
 }

@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
@@ -17,6 +15,7 @@ import { addToCart } from "../../redux/HabeshaSlice"
 import { v4 as uuidv4 } from "uuid"
 import userProductService from "../../service/userProductService"
 import CartService from "../../service/CartService"
+import UserSettingsService from "../../service/UserSettingsService"
 import ProductReviews from "../../componets/products/ProductReviews"
 
 const ProductDetails = () => {
@@ -32,13 +31,14 @@ const ProductDetails = () => {
   const [isFavorite, setIsFavorite] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [notification, setNotification] = useState(null)
+  const [exchangeRate, setExchangeRate] = useState(150); // Default value
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const [productResponse, favoriteResponse] = await Promise.all([
           userProductService.getProductById(id),
-          userProductService.isFavorited(id).catch(() => ({ data: { favorited: false } })) // Fallback for non-authenticated users
+          userProductService.isFavorited(id).catch(() => ({ data: { favorited: false } }))
         ]);
         setProduct(productResponse.data);
         setIsFavorite(favoriteResponse.data.favorited);
@@ -50,6 +50,16 @@ const ProductDetails = () => {
       }
     };
     fetchProduct();
+    const fetchSettings = async () => {
+      try {
+        const response = await UserSettingsService.getSettings();
+        setExchangeRate(response.data.storeInfo.exchangeRate || 150);
+      } catch (err) {
+        console.error('Failed to fetch settings:', err);
+        setExchangeRate(150); // Fallback to default
+      }
+    };
+    fetchSettings();
   }, [id]);
 
   const text = {
@@ -102,10 +112,9 @@ const ProductDetails = () => {
   };
 
   const currentText = text[language];
-  const USD_TO_ETB_RATE = 150;
 
   const formatPrice = (price) => {
-    const value = language === "EN" ? price : price * USD_TO_ETB_RATE;
+    const value = language === "EN" ? price : price * exchangeRate;
     return value.toLocaleString(language === "AMH" ? 'am-ET' : 'en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -218,7 +227,6 @@ const ProductDetails = () => {
 
   return (
     <div lang={language === "EN" ? "en" : "am"} className="max-w-screen-2xl mx-auto px-4 py-8">
-      {/* Notification */}
       {notification && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300">
           <div className={`bg-white border-l-4 ${notification.type === 'success' ? 'border-green-500' : 'border-red-500'} shadow-2xl rounded-lg p-4 max-w-sm mx-auto`}>
@@ -244,7 +252,6 @@ const ProductDetails = () => {
         </div>
       )}
 
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6">
         <button
           onClick={() => navigate("/")}
@@ -260,7 +267,6 @@ const ProductDetails = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Product Image */}
         <div className="space-y-4">
           <div className="bg-gray-50 rounded-lg p-8 flex items-center justify-center">
             <img
@@ -271,13 +277,11 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        {/* Product Info */}
         <div className="space-y-6">
           <div>
             <label className="inline-block px-3 py-1 bg-habesha_blue/10 text-habesha_blue text-sm font-semibold rounded-full mb-3">{product.category}</label>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
 
-            {/* Rating */}
             <div className="flex items-center gap-2 mb-4">
               <div className="flex">{renderStars(product.rate)}</div>
               <span className="text-sm text-gray-600">
@@ -285,7 +289,6 @@ const ProductDetails = () => {
               </span>
             </div>
 
-            {/* Price */}
             <div className="flex items-center gap-4 mb-6">
               <span className="text-3xl font-bold text-habesha_blue">
                 {language === "EN" ? "$" : "ETB "}
@@ -299,7 +302,6 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <h3 className="text-lg font-semibold mb-3">{currentText.description}</h3>
             <p className="text-gray-700 leading-relaxed">
@@ -307,7 +309,6 @@ const ProductDetails = () => {
             </p>
           </div>
 
-          {/* Quantity Selector */}
           <div className="flex items-center gap-4">
             <label className="font-medium">{currentText.quantity}:</label>
             <div className="flex items-center border border-gray-300 rounded-md">
@@ -329,7 +330,6 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-4">
             <button
               onClick={handleAddToCart}
@@ -363,7 +363,6 @@ const ProductDetails = () => {
             </button>
           </div>
 
-          {/* Features */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-gray-200">
             <div className="flex items-center gap-3">
               <LocalShippingIcon className="text-habesha_blue" />
@@ -383,7 +382,6 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Additional Product Details */}
       <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="bg-white border border-gray-200 rounded-lg p-6">

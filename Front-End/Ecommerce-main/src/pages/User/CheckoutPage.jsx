@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
 import { resetCart } from "../../redux/HabeshaSlice"
@@ -11,6 +11,7 @@ import OrderSuccess from "../../componets/CheckOut/OrderSuccess"
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"
 import SecurityIcon from "@mui/icons-material/Security"
 import userOrderService from "../../service/userOrderService"
+import UserSettingsService from "../../service/UserSettingsService"
 
 const CheckoutPage = () => {
   const [currentStep, setCurrentStep] = useState(1)
@@ -25,10 +26,10 @@ const CheckoutPage = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  const USD_TO_ETB_RATE = 150
+  const [exchangeRate, setExchangeRate] = useState(150); // Default value
 
   const formatPrice = (value) => {
-    const price = language === 'EN' ? value : value * USD_TO_ETB_RATE
+    const price = language === 'EN' ? value : value * exchangeRate
     return price.toLocaleString(language === 'AMH' ? 'am-ET' : 'en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -130,6 +131,19 @@ const CheckoutPage = () => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await UserSettingsService.getSettings();
+        setExchangeRate(response.data.storeInfo.exchangeRate || 150);
+      } catch (err) {
+        console.error('Failed to fetch settings:', err);
+        setExchangeRate(150); // Fallback to default
+      }
+    };
+    fetchSettings();
+  }, []);
 
   if (orderSubmitted) {
     return <OrderSuccess language={language} navigate={navigate} />

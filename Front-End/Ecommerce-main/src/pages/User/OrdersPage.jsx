@@ -10,6 +10,7 @@ import OrdersFilters from "../../componets/orders/UserOrders/OrdersFilters"
 import EmptyState from "../../componets/orders/UserOrders/EmptyState"
 import LoadingState from "../../componets/orders/UserOrders/LoadingState"
 import userOrderService from "../../service/userOrderService"
+import UserSettingsService from "../../service/UserSettingsService"
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([])
@@ -22,10 +23,10 @@ const OrdersPage = () => {
   const language = useSelector((state) => state.habesha.language)
   const navigate = useNavigate()
 
-  const USD_TO_ETB_RATE = 150
+  const [exchangeRate, setExchangeRate] = useState(150); // Default value
 
   const formatPrice = (value) => {
-    const price = language === 'EN' ? value : value * USD_TO_ETB_RATE
+    const price = language === 'EN' ? value : value * exchangeRate
     return price.toLocaleString(language === 'AMH' ? 'am-ET' : 'en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -47,6 +48,16 @@ const OrdersPage = () => {
 
   useEffect(() => {
     fetchOrders()
+    const fetchSettings = async () => {
+      try {
+        const response = await UserSettingsService.getSettings();
+        setExchangeRate(response.data.storeInfo.exchangeRate || 150);
+      } catch (err) {
+        console.error('Failed to fetch settings:', err);
+        setExchangeRate(150); // Fallback to default
+      }
+    };
+    fetchSettings();
   }, [])
 
   const fetchOrders = async () => {

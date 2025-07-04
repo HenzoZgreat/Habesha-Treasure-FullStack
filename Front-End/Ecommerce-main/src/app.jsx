@@ -12,7 +12,7 @@ import { productsData } from "./componets/api/api";
 import Footer from "./componets/Footer/Footer";
 import Header from "./componets/Header/Header";
 import Home from "./pages/Home";
-import Cart from "./pages/Cart";
+import Cart from "./pages/User/Cart";
 import SignIn from "./pages/SignIn";
 import Regestration from "./pages/Regestration";
 import ResetPassword from "./pages/ResetPassword";

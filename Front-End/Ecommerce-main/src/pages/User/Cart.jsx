@@ -3,14 +3,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
-import { deleteItem, resetCart, incrementQuantity, decrementQuantity, setCart } from '../redux/HabeshaSlice';
-import emptyCart from '../assets/images/emptyCart.png';
+import { deleteItem, resetCart, incrementQuantity, decrementQuantity, setCart } from '../../redux/HabeshaSlice';
+import emptyCart from '../../assets/images/emptyCart.png';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import CartService from '../service/CartService';
+import CartService from '../../service/CartService';
 import PersonIcon from "@mui/icons-material/Person";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
-import UserSettingsService from '../service/UserSettingsService';
+import UserSettingsService from '../../service/UserSettingsService';
 
 const Cart = () => {
   const dispatch = useDispatch();

@@ -357,13 +357,13 @@ const SignIn = () => {
               </button>
 
               {/* Google Sign-In Button */}
-              <button
+              {/* <button
                 onClick={handleGoogleSignIn}
                 className="w-full py-1.5 text-sm font-normal rounded-sm bg-gradient-to-t from-[#f7dfa5] to-[#f0c14b] hover:bg-gradient-to-b border border-zinc-400 active:border-yellow-800 active:shadow-habeshaInput flex items-center justify-center gap-2"
               >
                 <GoogleIcon className="text-base" />
                 {currentText.continueWithGoogle}
-              </button>
+              </button> */}
             </div>
 
             <p className="text-xs text-black leading-4 mt-4">

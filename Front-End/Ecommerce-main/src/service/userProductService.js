@@ -56,6 +56,11 @@ const getCurrentUserId = async () => {
   return api.get('/auth/me/id', { headers: { Authorization: `Bearer ${token}` } });
 };
 
+const getUniqueCategories = async () => {
+  const token = localStorage.getItem('token');
+  return api.get(`${API_URL}/distinct/categories`, { headers: { Authorization: `Bearer ${token}` } });
+};
+
 const userProductService = {
   getProducts,
   getProductById,
@@ -66,7 +71,8 @@ const userProductService = {
   submitReview,
   getReviews,
   deleteReview,
-  getCurrentUserId
+  getCurrentUserId,
+  getUniqueCategories
 };
 
 export default userProductService;

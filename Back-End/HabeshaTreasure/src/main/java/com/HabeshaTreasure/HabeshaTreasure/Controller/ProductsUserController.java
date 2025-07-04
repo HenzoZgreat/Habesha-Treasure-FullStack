@@ -99,7 +99,10 @@ public class ProductsUserController {
         return ResponseEntity.ok("Review deleted");
     }
 
-
+    @GetMapping("/distinct/categories")
+    public ResponseEntity<List<String>> getDistinctCategories() {
+        return ResponseEntity.ok(productsService.getDistinctCategories());
+    }
 
 
 }

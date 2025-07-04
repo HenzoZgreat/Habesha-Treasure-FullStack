@@ -10,7 +10,6 @@ import PersonIcon from "@mui/icons-material/Person"
 import LogoutIcon from "@mui/icons-material/Logout"
 import MenuIcon from "@mui/icons-material/Menu"
 import CloseIcon from "@mui/icons-material/Close"
-import { allItems } from "../constant/headerItems"
 import { useSelector, useDispatch } from "react-redux"
 import { setLanguage, setCart } from "../../redux/HabeshaSlice"
 import HabeshaLogo from "../../assets/images/HabeshaLogo.jpeg"
@@ -20,6 +19,7 @@ import Ethiopia from "../../assets/images/ET.jpeg"
 import api from "../api/api"
 import AssignmentReturnIcon from "@mui/icons-material/AssignmentReturn"
 import CartService from "../../service/CartService"
+import userProductService from "../../service/userProductService"
 
 const Header = () => {
   const [showAll, setShowAll] = useState(false)
@@ -34,6 +34,7 @@ const Header = () => {
   const language = useSelector((state) => state.habesha.language)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const [categories, setCategories] = useState([])
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -55,7 +56,7 @@ const Header = () => {
 
       CartService.getCart()
         .then((response) => {
-          const cartItems = Array.isArray(response.data) ? response.data : [];
+          const cartItems = Array.isArray(response.data) ? response.data : []
           dispatch(setCart(cartItems.map(item => ({
             id: item.productId,
             title: item.productName,
@@ -70,6 +71,21 @@ const Header = () => {
         })
     }
   }, [dispatch])
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await userProductService.getUniqueCategories()
+        setCategories(response.data.map(category => ({
+          id: category,
+          title: { EN: category, AMH: category }
+        })))
+      } catch (error) {
+        console.error("Failed to fetch categories:", error)
+      }
+    }
+    fetchCategories()
+  }, [])
 
   const handleSearch = () => {
     if (searchItem.trim()) {
@@ -210,7 +226,7 @@ const Header = () => {
             {showAll && (
               <div>
                 <ul className="absolute h-50 w-56 top-8 sm:top-10 left-0 overflow-x-hidden bg-white border-[1px] border-habesha_blue text-black p-2 flex-col gap-1 z-50 rounded-md shadow-lg">
-                  {allItems.map((item) => (
+                  {categories.map((item) => (
                     <li
                       onClick={() => {
                         setSearchItem(item.title[language])
@@ -294,10 +310,8 @@ const Header = () => {
             {user ? (
               <div
                 className="relative flex flex-col items-start justify-center headerHover"
-                onMouseEnter={() => setShowAccountDropdown(true)}
-                onMouseLeave={() => setShowAccountDropdown(false)}
               >
-                <div className="p-1 sm:p-2 hover:bg-white/10 rounded-md transition-colors cursor-pointer">
+                <div onClick={() => setShowAccountDropdown(!showAccountDropdown)} className="p-1 sm:p-2 hover:bg-white/10 rounded-md transition-colors cursor-pointer">
                   <p className="text-xs text-white font-light hidden lg:block">Hello, {user.firstName}</p>
                   <p className="text-xs sm:text-sm font-semibold -mt-1 text-whiteText flex items-center">
                     <PersonIcon className="lg:hidden" />

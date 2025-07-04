@@ -1,6 +1,5 @@
 {
   "build": {
-    "root": "Back-End/HabeshaTreasure",
     "builder": "nixpacks",
     "buildCommand": "./mvnw package -DskipTests"
   },
